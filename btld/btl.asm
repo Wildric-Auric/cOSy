@@ -1,14 +1,13 @@
 ;int 0x10 writes tty after setting a byte on al
 
 [org 0x7c00]
+;mov ax, 0x7C0
+;mov ds, ax
 
-mov ah, 0x0e ;tty
 mov bp, 0x8000
 mov sp, bp   ; sets the stack on the end of 2nd sector
 
-
 ;main
-
 
 mov  bx, txt 
 call wrtstr
@@ -17,19 +16,21 @@ call wrtendl
 
 mov ax, 0x0
 mov es, ax
-mov bx, 0x8000
+mov bx, bp 
 mov dh, 2
 call ldsk
 
 
-mov bx, [0x8000]
+mov bx, 0xFD00
 
 call wrtendl
 call wrtnum16
 call wrtendl
 call wrtendl
 
-jmp $
+call swtch_pm
+
+jmp eop
 
 wrtendl:
     pusha
@@ -78,47 +79,21 @@ wrtnum16:
     int 0x10
 
     mov dx, bx
-
-    mov ax, dx 
+    
     mov cx, 0x1000
-    xor dx, dx
-    div cx
-    add ax, hexlkup 
-    mov bx, ax 
-    mov ah, 0xE
-    mov al, [bx]
-    int 0x10
 
-    mov ax, dx 
-    mov cx, 0x0100
-    xor dx, dx
-    div cx
-    add ax, hexlkup 
-    mov bx, ax 
-    mov ah, 0xE
-    mov al, [bx]
-    int 0x10
-
-    mov ax, dx 
-    mov cx, 0x10
-    xor dx, dx
-    div cx
-    add ax, hexlkup 
-    mov bx, ax 
-    mov ah, 0xE
-    mov al, [bx]
-    int 0x10
-
-    mov ax, dx 
-    mov cx, 0x1
-    xor dx, dx
-    div cx
-    add ax, hexlkup 
-    mov bx, ax 
-    mov ah, 0xE
-    mov al, [bx]
-    int 0x10 
-
+    wrtnum16lp:
+        mov ax, dx
+        xor dx, dx
+        div cx
+        add ax, hexlkup 
+        mov bx, ax 
+        mov ah, 0xE
+        mov al, [bx]
+        int 0x10
+        shr cx, 0x04
+        cmp cx, 0x0
+        jne wrtnum16lp 
     popa
     ret
 
@@ -161,13 +136,91 @@ ldsk_err:
     popa
     ret
     
+;------------------------32 bit PM------------------------
+; https://wiki.osdev.org/GDT_Tutorial#What_to_Put_In_a_GDT
+; https://wiki.osdev.org/Global_Descriptor_Table
+; total base is 16, total limit 20 bit
+gdt_beg:
+    ; Entry 0, has only 0s
+    dd 0x0 ;4 bytes
+    dd 0x0 
+    ; Code seg desc
+gdt_code:
+    dw 0xFFFF     ;length 0-15  16
+    dw 0x0        ;base   16-31 16
+    db 0x0        ;base   32-39 8
+    db 10011010b  ;access byte 40-47  8
+    db 11001111b  ;flags+limit 48-55 4+4
+    db 0x0        ;base    55-63 8
 
+    ; Data Seg
+gdt_dat:
+    dw 0xFFFF     
+    dw 0x0        
+    db 0x0        
+    db 10010010b  
+    db 11001111b  
+    db 0x0        
+gdt_end:
 
+gdt_desc:
+    dw gdt_end - gdt_beg - 1    ;gdt size minus -1 
+    dd gdt_beg                  ;address 8 bytes
 
+CODE_SEG equ gdt_code - gdt_beg
+DATA_SEG equ gdt_dat  - gdt_beg
+
+[bits 16]
+swtch_pm:
+    cli ;disable ints 
+    lgdt [gdt_desc] ;load gdt
+    ; set cr0 first bit to 1
+    mov eax, cr0
+    or  eax,  0x1
+    mov cr0, eax
+    jmp CODE_SEG:init_pm ;far jump different seg
+
+[bits 32]
+init_pm:
+    mov ax, DATA_SEG
+    mov ds, ax
+    mov ss, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ebp, 0x90000
+    mov esp, ebp
+    call beg_32pm 
+
+;------------------------32 bit code------------------------
+[bits 32]
+wrtstr32:
+    pusha
+    mov ah,  0x0F    ;color
+    mov edx, 0xB8000
+    wrtstr32lp:
+        mov al, [ebx] ;char 
+        cmp al, 0
+        je  wrtstr32end
+        mov [edx], ax
+        add edx, 2
+        add ebx, 1
+        jmp wrtstr32lp
+    wrtstr32end:
+        popa
+        ret
+
+beg_32pm:
+mov ebx, beg32pm
+call wrtstr32
+
+jmp $
+;----------------------------------------------------------
 
 %define endl 0xA,0xD,0
 
-
+beg32pm: 
+    db "Entered 32-bit Protected mode",0
 hexlkup:
     db "0123456789ABCDEF",0
 txt:
@@ -177,5 +230,7 @@ ldsk_err_str:
 ldsk_ok:
     db "Read Disk Ok",0
 
+eop:
+    jmp $
 times 510-($-$$) db 0
 dw    0xAA55

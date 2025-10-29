@@ -1,4 +1,5 @@
 *.bin
 *.lst
 doc/
+crscmp/
 

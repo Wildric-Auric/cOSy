@@ -1,8 +1,8 @@
-;int 0x10 writes tty after setting a byte on al
-
-[org 0x7c00]
 ;mov ax, 0x7C0
 ;mov ds, ax
+[org 0x7c00]
+KERNEL_OFFSET equ 0x1000
+mov [BOOT_DRIVE], dl
 
 mov bp, 0x8000
 mov sp, bp   ; sets the stack on the end of 2nd sector
@@ -14,20 +14,13 @@ call wrtstr
 call wrtendl
 
 
-mov ax, 0x0
-mov es, ax
-mov bx, bp 
-mov dh, 2
-call ldsk
+;mov ax, 0x0
+;mov es, ax
+;mov bx, bp 
+;mov dh, 2
+;call ldsk
 
-
-mov bx, 0xFD00
-
-call wrtendl
-call wrtnum16
-call wrtendl
-call wrtendl
-
+call ldkrnl 
 call swtch_pm
 
 jmp eop
@@ -115,9 +108,10 @@ ldsk:
     push dx 
     mov ah, 0x02
     mov al, dh 
-    mov cl, 0x01
+    mov cl, 0x02 ; 0x1 would be the bootloader sector 
     mov ch, 0x0
     mov dh, 0x0
+    mov dl, [BOOT_DRIVE]
     int 0x13
     jc  ldsk_err
     pop dx 
@@ -135,6 +129,16 @@ ldsk_err:
     call wrtnum16
     popa
     ret
+
+;ldkrnl: loads kernel from disk 
+ldkrnl:
+    mov ax, 0x0
+    mov es, ax
+    mov bx, KERNEL_OFFSET 
+    mov dh, 2
+    call ldsk
+    ret
+
     
 ;------------------------32 bit PM------------------------
 ; https://wiki.osdev.org/GDT_Tutorial#What_to_Put_In_a_GDT
@@ -213,18 +217,26 @@ wrtstr32:
 beg_32pm:
 mov ebx, beg32pm
 call wrtstr32
-
+mov ah,  0x0F    ;color
+mov edx, 0xB8000
+mov eax, KERNEL_OFFSET
+call KERNEL_OFFSET 
+mov ebx, end32pm 
+call wrtstr32
 jmp $
 ;----------------------------------------------------------
 
 %define endl 0xA,0xD,0
 
+BOOT_DRIVE db 0
 beg32pm: 
     db "Entered 32-bit Protected mode",0
+end32pm: 
+    db "back from kernel",0
 hexlkup:
     db "0123456789ABCDEF",0
 txt:
-    db "Hello BootSector",0 
+    db "Hello BootZector",0 
 ldsk_err_str:
     db "Read Disk Error",0
 ldsk_ok:

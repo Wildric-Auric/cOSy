@@ -79,8 +79,7 @@ void main() {
     init_td(&default_td);
     clear();
     for (int i = 0; i < default_td.width; ++i) {
-        print_str_tty("-",0x0F, &default_td);
-    }
+        print_str_tty("-",0x0F, &default_td); }
     print_str("Hey there");
-    print_str("; From C!");
+    print_str(", From C!");
 }

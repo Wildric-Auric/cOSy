@@ -135,7 +135,7 @@ ldkrnl:
     mov ax, 0x0
     mov es, ax
     mov bx, KERNEL_OFFSET 
-    mov dh, 10
+    mov dh, 20
     call ldsk
     ret
 

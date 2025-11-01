@@ -1,4 +1,6 @@
-#pragma once
+#ifndef GLOBALS_H
+#define GLOBALS_H
+
 typedef __INT8_TYPE__   i8;
 typedef __INT16_TYPE__  i16;
 typedef __INT32_TYPE__  i32;
@@ -12,3 +14,10 @@ typedef struct {
 } i2;
 typedef unsigned char  uchar;
 typedef unsigned short ushort;
+typedef ui8 boolean;
+
+
+#define mmin(a,b) ((a)<(b)?(a):(b))
+#define mmax(a,b) ((a)>(b)?(a):(b))
+
+#endif

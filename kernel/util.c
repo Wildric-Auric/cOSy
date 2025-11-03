@@ -9,3 +9,7 @@ char cnv_ascii_qwaz(char c) {
         default: return c;
     }
 }
+
+boolean is_alpha_num(char c) {
+    return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
+}

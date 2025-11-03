@@ -1,5 +1,5 @@
 #include "inter.h"
-#include "vga.h"
+#include "video.h"
 
 
 extern uchar rd_port_byte(ushort port);

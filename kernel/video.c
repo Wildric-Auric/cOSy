@@ -1,4 +1,4 @@
-#include "vga.h"
+#include "video.h"
 extern uchar rd_port_byte(ushort port);
 extern void  wrt_port_byte(ushort port, uchar data);
 
@@ -7,7 +7,7 @@ VGA_Data* vga_ptr_vd = &vga_def_vd;
 
 
 ui16 vga_get_value(int p) {
-    volatile char* vm = (volatile char*)VIDEO_MEMORY;
+    volatile char* vm = (volatile char*)VGA_VIDEO_MEMORY;
     ui16 h = *(vm+p);
     ui16 l = *(vm+p+1);
     return (h << 8) | (l);
@@ -22,7 +22,7 @@ void vga_set_col(ui16 col) {
 }
 
 int vga_put(char c, int x, int y) {
-    volatile char* vm = (volatile char*)VIDEO_MEMORY;
+    volatile char* vm = (volatile char*)VGA_VIDEO_MEMORY;
     int p = (y * vga_ptr_vd->width + x)*2;
     *(vm+p)   = c;
     *(vm+p+1) = vga_ptr_vd->col;
@@ -30,7 +30,7 @@ int vga_put(char c, int x, int y) {
 }
 
 int vga_print_char(char c) {
-    volatile char* vm = (volatile char*)VIDEO_MEMORY;
+    volatile char* vm = (volatile char*)VGA_VIDEO_MEMORY;
     *(vm+vga_ptr_vd->cur)   = c;
     *(vm+vga_ptr_vd->cur+1) = vga_ptr_vd->col;
     vga_ptr_vd->cur += 2;
@@ -39,7 +39,7 @@ int vga_print_char(char c) {
 }
 
 void vga_fill_till_cur(char c) {
-    volatile char* vm = (volatile char*)VIDEO_MEMORY;
+    volatile char* vm = (volatile char*)VGA_VIDEO_MEMORY;
     for (int i = 0; i < vga_ptr_vd->cur; i+=2) {
         *(vm+i)   = c;
         *(vm+i+1) = vga_ptr_vd->col;

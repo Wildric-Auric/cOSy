@@ -1,1 +1,2 @@
-rm build/*
+rm build/*.*
+rm build/entry/*.*

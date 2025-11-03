@@ -1,7 +1,10 @@
-#ifndef VGA_H
-#define VGA_H
+#ifndef VIDEO_H
+#define VIDEO_H
 #include "globals.h"
 
+
+
+//----------------------VGA-----------------------
 typedef struct  {
     int cur; 
     int width;
@@ -11,7 +14,7 @@ typedef struct  {
 extern VGA_Data  vga_def_vd;
 extern VGA_Data* vga_ptr_vd;
 
-#define VIDEO_MEMORY  0xb8000
+#define VGA_VIDEO_MEMORY  0xb8000
 
 ui16 vga_get_value(int p);
 ui16 vga_get_value2(int x, int y);
@@ -38,5 +41,23 @@ void vga_print32(int n);
 void vga_query_cur();
 void vga_query_width();
 void drv_init_vga();
+
+//------------------------------------------------
+// https://wiki.osdev.org/User:Omarrx024/VESA_Tutorial
+// https://wiki.osdev.org/VESA_Video_Modes
+typedef struct {
+    char    signature[4];
+    ui16    version;
+    ui32    oem;
+    ui32    cap;
+    ui32    vid_modes;
+    ui16    vid_mem;
+    ui16    soft_rev;
+    ui32    vendor;
+    ui32    prod_name;
+    ui32    prod_rev;
+    char    _res[222];
+    char    _oem_data[256];
+} __attribute__((packed)) vbe_info;
 
 #endif

@@ -1,7 +1,7 @@
 #include "inter.h"
 #include "util.h"
 #include "kb.h"
-#include "vga.h"
+#include "video.h"
 
 
 #define VIDEO_MEMORY  0xb8000

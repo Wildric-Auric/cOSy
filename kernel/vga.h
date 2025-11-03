@@ -13,6 +13,14 @@ extern VGA_Data* vga_ptr_vd;
 
 #define VIDEO_MEMORY  0xb8000
 
+ui16 vga_get_value(int p);
+ui16 vga_get_value2(int x, int y);
+void vga_get_cur_pos2(int* x, int* y);
+void vga_set_cur_pos2(int x, int y);
+int vga_get_cur_pos();
+void vga_get_cur_pos2(int* x, int* y);
+void vga_set_col(ui16 col);
+int vga_put(char c, int x, int y);
 void vga_set_gcur_pos(int p);
 void vga_fill_till_cur(char c);
 int vga_print_char(char c);

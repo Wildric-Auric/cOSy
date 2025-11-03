@@ -5,6 +5,30 @@ extern void  wrt_port_byte(ushort port, uchar data);
 VGA_Data  vga_def_vd = {};
 VGA_Data* vga_ptr_vd = &vga_def_vd;
 
+
+ui16 vga_get_value(int p) {
+    volatile char* vm = (volatile char*)VIDEO_MEMORY;
+    ui16 h = *(vm+p);
+    ui16 l = *(vm+p+1);
+    return (h << 8) | (l);
+}
+
+ui16 vga_get_value2(int x, int y) {
+    return vga_get_value((y * vga_ptr_vd->width + x)*2);
+}
+
+void vga_set_col(ui16 col) {
+    vga_ptr_vd->col = col;
+}
+
+int vga_put(char c, int x, int y) {
+    volatile char* vm = (volatile char*)VIDEO_MEMORY;
+    int p = (y * vga_ptr_vd->width + x)*2;
+    *(vm+p)   = c;
+    *(vm+p+1) = vga_ptr_vd->col;
+    return p;
+}
+
 int vga_print_char(char c) {
     volatile char* vm = (volatile char*)VIDEO_MEMORY;
     *(vm+vga_ptr_vd->cur)   = c;
@@ -40,6 +64,25 @@ void vga_update_gcur() {
 
 void vga_set_gcur_pos2(int x, int y) {
     vga_set_gcur_pos(vga_ptr_vd->width * y + x);
+}
+
+
+int vga_get_cur_pos() {
+    return vga_ptr_vd->cur / 2;
+}
+
+void vga_get_cur_pos2(int* x, int* y) {
+    int p = vga_get_cur_pos();
+    *y = p / vga_ptr_vd->width; 
+    *x = p % vga_ptr_vd->width; 
+}
+
+void vga_set_cur_pos(int p) {
+    vga_ptr_vd->cur = p * 2;
+}
+
+void vga_set_cur_pos2(int x, int y) {
+    vga_set_cur_pos(y * vga_ptr_vd->width + x);
 }
 
 void vga_get_gcur_pos2(int* x, int* y) {

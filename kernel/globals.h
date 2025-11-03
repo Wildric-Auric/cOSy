@@ -12,6 +12,9 @@ typedef __UINT64_TYPE__ ui64;
 typedef struct { 
     int x; int y;
 } i2;
+typedef struct { 
+    int x; int y; int z;
+} i3;
 typedef unsigned char  uchar;
 typedef unsigned short ushort;
 typedef ui8 boolean;

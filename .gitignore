@@ -1,6 +1,8 @@
 *.bin
 *.lst
 *.o
+*.ini
+bochs*
 doc/
 crscmp/
 

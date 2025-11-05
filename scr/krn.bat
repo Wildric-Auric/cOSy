@@ -9,6 +9,6 @@ mv *.o build/
 mkdir build\\entry
 mv build/kernel_entry.o build/entry/kernel_entry.o
 wsl -e bash -ic ^
-"i686-elf-ld  -Ttext 0x8600 build/entry/kernel_entry.o build/*.o --oformat binary -o build/kernel.bin"
+"i686-elf-ld  -Ttext 0x100000 build/entry/kernel_entry.o build/*.o --oformat binary -o build/kernel.bin"
 
 popd

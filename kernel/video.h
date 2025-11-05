@@ -2,6 +2,7 @@
 #define VIDEO_H
 #include "globals.h"
 
+#define VGA_VIDEO_MEMORY  (0xB8000)
 
 
 //----------------------VGA-----------------------
@@ -14,7 +15,6 @@ typedef struct  {
 extern VGA_Data  vga_def_vd;
 extern VGA_Data* vga_ptr_vd;
 
-#define VGA_VIDEO_MEMORY  0xb8000
 
 ui16 vga_get_value(int p);
 ui16 vga_get_value2(int x, int y);

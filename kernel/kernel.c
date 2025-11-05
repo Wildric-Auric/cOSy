@@ -65,7 +65,7 @@ void basic_text_editor() {
 }
 //-------------------------------
 #define particle_num 48 
-#define ptimer 9000
+#define ptimer 100
 i3 sands[particle_num];
 
 void sand_gui() {
@@ -73,7 +73,6 @@ void sand_gui() {
         sands[i].x = -1;
         sands[i].y = -1;
     }
-
     while (1) {
         int x,y;
         while (kb_get_stack_ptr()) {
@@ -148,27 +147,32 @@ void sand_gui() {
 
 
 const char* a = "Hey there";
-void main() {
-    drv_init_vga();
-    vga_clear();
-    set_idt();
-    asm __volatile__("sti");
-    drv_init_kb(); 
-          
+
+void test_vga() {
+    vga_put('X', 0, 0);
+    vga_set_cur_pos2(10,3);
+    vga_update_gcur();
+    vga_set_col(0xAA);
+    vga_print16(vga_get_value2(10, 9));
+    vga_go_next_line();
+    vga_update_gcur();  
+}
+
+void print_line() {
     vga_go_next_line();
     for (int i = 0; i < vga_ptr_vd->width; ++i) {
         vga_print("-"); 
     }
     vga_go_next_line();
-    //vga_print(a); vga_print(", From C!");
-    vga_go_next_line();
-    vga_update_gcur();  
+}
 
-    //basic_text_editor();
-    //vga_set_col(0xAA);
-    vga_put('X', 0, 0);
-    vga_set_cur_pos2(10,3);
-    vga_update_gcur();
-    //vga_print16(vga_get_value2(10, 9));
+int main() {
+    drv_init_vga();
+    vga_clear();
+    set_idt();
+    asm __volatile__("sti");
+    drv_init_kb(); 
     sand_gui();
+    //basic_text_editor();
+    return 0;
 }

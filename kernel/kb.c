@@ -1,5 +1,6 @@
 #include "kb.h"
 #include "inter.h"
+#include "video.h"
 
 //wiki.osdev.org/index.php?title=I8042_PS/2_Controller
 //wiki.osdev.org/PS/2_Keyboard#Scan_Code_Sets
@@ -25,20 +26,16 @@ ui16 kb_peek_scode() {
 }
 
 void kb_cbk() {
-    ui8 scancode             = rd_port_byte(0x60);
+    ui8  scancode            = rd_port_byte(0x60);
     ui16 ev                  = (scancode >= 0x80) ? 0x2 : 0x1; //if bigger than 0x80 its release
     ui16 nsc =  scancode - (ev & key_event_enm_released ?  0x80 : 0x0);
     kb_stack[kb_stack_ptr++] = (ev << 8)|(nsc);
-
-    //print_hex32(scode);
-    //print_letter(scode);
-    //update_gcursor();
 }
 
 void drv_init_kb() {
+    kb_stack_ptr = 0;
     bind_int_hdl(33, kb_cbk);
     for (int i = 0; i < 256; kb_stack[i++]=0);
-    kb_stack_ptr = 0;
 }
 
 void kb_cnv_scode(ui16 scode, key_inf* out) {

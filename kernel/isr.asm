@@ -13,8 +13,6 @@ isr_end:
     mov gs, ax
     
     call isr_hdl
-    mov eax, [esp + 40]       ;offset to fist pushed value by isr 
-    add dword [esp + 44], eax ;44 is offset till EIP
     pop eax
     mov ds, ax
     mov es, ax
@@ -38,9 +36,7 @@ irq_end:
     mov gs, ax
     
     call irq_hdl
-    mov eax, [esp + 40]       ;offset to fist pushed value by isr 
-    add dword [esp + 44], eax ;44 is offset till EIP
-    pop ebx
+    pop eax
     mov ds, ax
     mov es, ax
     mov fs, ax
@@ -66,8 +62,16 @@ irq_end:
 global isr%1
 isr%1:
     cli
-    push byte %2   ; first byte
-    push byte %3   ; second byte
+    push byte %2
+    push byte %3 
+    jmp isr_end
+%endmacro
+
+%macro ISR1 3
+global isr%1
+isr%1:
+    cli
+    push byte %3
     jmp isr_end
 %endmacro
 
@@ -75,44 +79,44 @@ isr%1:
 global irq%1
 irq%1:
     cli
-    push byte %2   ; first byte
-    push byte %3   ; second byte
+    push byte %2
+    push byte %3
     jmp irq_end
 %endmacro
 
 
-ISR 0, 0, 0
-ISR 1, 0, 1
-ISR 2, 0, 2
-ISR 3, 0, 3
-ISR 4, 0, 4
-ISR 5, 0, 5
-ISR 6, 0, 6
-ISR 7, 0, 7
-ISR 8, 0, 8
-ISR 9, 0, 9
-ISR 10, 0, 10
-ISR 11, 0, 11
-ISR 12, 0, 12
-ISR 13, 0, 13
-ISR 14, 0, 14
-ISR 15, 0, 15
-ISR 16, 0, 16
-ISR 17, 0, 17
-ISR 18, 0, 18
-ISR 19, 0, 19
-ISR 20, 0, 20
-ISR 21, 0, 21
-ISR 22, 0, 22
-ISR 23, 0, 23
-ISR 24, 0, 24
-ISR 25, 0, 25
-ISR 26, 0, 26
-ISR 27, 0, 27
-ISR 28, 0, 28
-ISR 29, 0, 29
-ISR 30, 0, 30
-ISR 31, 0, 31
+ISR  0, 0, 0
+ISR  1, 0, 1
+ISR  2, 0, 2
+ISR  3, 0, 3
+ISR  4, 0, 4
+ISR  5, 0, 5
+ISR  6, 0, 6
+ISR  7, 0, 7
+ISR1 8, 0, 8
+ISR  9, 0, 9
+ISR1 10, 0, 10
+ISR1 11, 0, 11
+ISR1 12, 0, 12
+ISR1 13, 0, 13
+ISR1 14, 0, 14
+ISR  15, 0, 15
+ISR  16, 0, 16
+ISR  17, 0, 17
+ISR  18, 0, 18
+ISR  19, 0, 19
+ISR  20, 0, 20
+ISR  21, 0, 21
+ISR  22, 0, 22
+ISR  23, 0, 23
+ISR  24, 0, 24
+ISR  25, 0, 25
+ISR  26, 0, 26
+ISR  27, 0, 27
+ISR  28, 0, 28
+ISR  29, 0, 29
+ISR  30, 0, 30
+ISR  31, 0, 31
     
 IRQ 0, 0,  32
 IRQ 1, 0,  33

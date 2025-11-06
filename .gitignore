@@ -2,6 +2,8 @@
 *.lst
 *.o
 *.ini
+*.elf
+build/
 bochs*
 doc/
 crscmp/

@@ -1,6 +1,5 @@
 #include "kb.h"
 #include "inter.h"
-#include "video.h"
 
 //wiki.osdev.org/index.php?title=I8042_PS/2_Controller
 //wiki.osdev.org/PS/2_Keyboard#Scan_Code_Sets

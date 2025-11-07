@@ -19,11 +19,24 @@ jmp $
 ; 0x500-0x7BFF --> stack
 ; 0x7C00-0x7DFF--> bootsector
 ; 0x7E00-0x8600--> stage 2 (2048 bytes)
+; 0x8600-0x7FFF--> space used by stage 2
+
+; changed->
 ; 0x8600-0x7FFF--> kernel  
 ;
 ; when A20 is enabled:
 ; 0xFFFF:0x10=0x100000 ---> Kernel
 ; 0x00F00000--->stack
+
+rmd_stack_offset    equ 0x7BFF
+pmd_stack_offset    equ 0xF00000
+stg2_offset         equ 0x7E00
+stg2_data_offset    equ 0x8600
+kernel_offset       equ 0x100000
+vesa_offset         equ stg2_data_offset
+vesa_mode_offset    equ vesa_offset + 512
+
+
 init_boot_sector:
     mov [boot_drive], dl
     mov ax, 0x7C0
@@ -58,6 +71,13 @@ wrt_endl:
     mov al, 0xD
     int 0x10
     mov al, 0xA
+    int 0x10
+    popa
+    ret
+wrt_char:
+    pusha
+    mov ah, 0x0E
+    mov al, bl
     int 0x10
     popa
     ret
@@ -187,6 +207,7 @@ check_a20:
 
 enable_a20:
     pusha
+    mov  bx, 510 + 0x7E00
     call check_a20
     cmp ax, 0x1 
     je enable_a20_end
@@ -195,6 +216,7 @@ enable_a20:
     or al, 2
     out 0x92, al
 
+    mov  bx, 510 + 0x7E00
     call check_a20
     cmp ax, 0x1 
     jne enable_a20_err 
@@ -282,12 +304,175 @@ init_stage2:
     mov ax, 0xFFFF 
     mov es, ax 
     mov bx, 0x10
-    mov al, 16 
+    mov al, 24 
     mov cl, 5
     call ldsk
+    ; Do it right before PM to continue using VGA here
+    ; Enable VESA
+    call enable_vesa 
     ; switch to pm
     call switch_to_pm 
     ret
+
+get_vesa_info:
+    pusha
+    mov ax, 0x4F00
+    mov di, vesa_offset
+    mov bx, 0x0 
+    mov es, bx
+    mov dword[es:di], 'VBE2'
+    int 0x10
+    cmp ax, 0x004F
+    jne get_vesa_info_err
+    wrtn ax
+    popa
+    ret
+get_vesa_info_err:
+    wrts vesa_err_str  
+    jmp $
+    popa
+    ret
+; input cx
+; output ax 0x4F on success 
+get_vesa_mode_info:
+    pusha
+    mov ax, 0x4F01
+    mov di, vesa_mode_offset
+    mov bx, 0x0
+    mov es, bx
+    ; mov cx, input
+    int 0x10
+    mov [vesa_mode_ret_val], ax
+    popa
+    ret
+vesa_mode_ret_val:
+    dw 0
+enable_vesa:
+        pusha
+        call get_vesa_info
+        push ds
+        mov ax, 0x0 
+        mov ds, ax
+        mov bx, [vesa_offset + 14]
+        mov es, [vesa_offset + 16]
+        pop ds
+    enable_vesa_lp:
+        mov cx, [es:bx] 
+        cmp cx, 0xFFFF 
+        je enable_vesa_end
+        ; check mode information
+        call get_vesa_mode_info
+        cmp [vesa_mode_ret_val], 0x4F
+        je .next
+        call vesa_mode_not_supported
+        jmp enable_vesa_lp 
+        .next:
+        push bx
+        pop bx
+        call enable_vesa_choose
+        add bx, 2
+        jmp enable_vesa_lp
+    enable_vesa_end:
+        cmp [vesa_sel_width], 0x0
+        je  get_vesa_info_err
+        ; store choosen mode info in memory
+        mov es, [vesa_sel_vid_mode_seg]
+        mov bx, [vesa_sel_vid_mode_offset]
+        mov cx, [es:bx]
+        call get_vesa_mode_info 
+        cmp [vesa_mode_ret_val], 0x4F
+        jne vesa_mode_not_supported
+        popa
+        ; print choosen mode info
+        xor dx, dx
+        mov bx, [vesa_sel_width]
+        mov cx, [vesa_sel_height]
+        mov dl, byte[vesa_sel_bpp]
+        call wrt_endl
+        wrtn bx 
+        wrtn cx 
+        wrtn dx
+        ;------------------------
+        mov ax, 0x4F02
+        mov es, [vesa_sel_vid_mode_seg]
+        mov bx, [vesa_sel_vid_mode_offset]
+        mov cx, [es:bx]
+        call get_vesa_mode_info 
+
+        ;wrts OK_str ; todo
+        ;wrtn [vesa_mode_offset + 0x2A - 0x7E00]
+        ;ret ; todo
+
+        mov bx, cx
+        and bx, 0x3FF
+        or  bx,  0x4000 
+        int 0x10
+        cmp ax, 0x004F
+        jne get_vesa_info_err 
+        ret
+enable_vesa_choose:
+    pusha
+    push ds
+    ; check linear bit 
+    mov ax, 0x0
+    mov ds, ax
+    mov al, byte[vesa_mode_offset]
+    and al, 0x80
+    cmp al, 0x80
+    jne .end_vesa_choose
+    mov ax, word[vesa_mode_offset + 0x28]
+    or  ax, word[vesa_mode_offset + 0x2A]
+    cmp ax, 0
+    je  .end_vesa_choose
+    xor ax, ax
+    xor dx, dx
+    xor cx, cx
+    xor dx, dx
+
+    mov bx, word[vesa_mode_offset + 0x12]
+    mov cx, word[vesa_mode_offset + 0x14]
+    mov dl, byte[vesa_mode_offset + 0x19]
+    ;mov al, byte[vesa_sel_bpp]
+    mov al, 0x20
+    cmp dl, al
+    jne .end_vesa_choose
+    ; jl .end_vesa_choose
+    mov ax, 0x7E0
+    mov ds, ax 
+    mov [vesa_sel_width]  , bx
+    mov [vesa_sel_height] , cx
+    mov byte[vesa_sel_bpp], dl
+    ; should save
+    pop ds
+    popa 
+    push ax
+    mov ax, [es:bx]
+    mov [vesa_sel_vid_mode_offset], bx
+    mov [vesa_sel_vid_mode_seg],    es
+    pop ax
+    ret
+    .end_vesa_choose:
+    pop ds
+    popa
+    ret
+vesa_mode_not_supported:
+    pusha
+    ;wrts vesa_mode_support_str
+    ;wrtn cx
+    popa
+    ret
+
+
+vesa_sel_vid_mode_seg:
+    dw 0
+vesa_sel_vid_mode_offset:
+    dw 0
+vesa_sel_width:
+    dw 0
+vesa_sel_height:
+    dw 0
+vesa_sel_bpp:
+    db 0
 
 [bits 16]
 switch_to_pm:
@@ -295,10 +480,19 @@ switch_to_pm:
     lgdt [gdt_desc]
     mov eax, cr0
     or  eax, 0x1
+
     mov cr0, eax
     jmp code_seg:(init_pm + 0x7E00)
     ret
 
+vesa_err_str:
+    db "VESA Bios not supported",0
+vesa_mode_support_str:
+    db "VESA mode not supposed: ",0
+OK_str:
+    db "OK",0
+
+; -------------------------------32 Bit PM-------------------------------
 [bits 32]
 init_pm:
     mov ax, data_seg
@@ -311,7 +505,7 @@ init_pm:
     ; mov ebp, 0x00F00000
     mov esp, ebp
     mov ebx, pm_str + 0x7E00
-    call wrt_str32
+    ; call wrt_str32
     call 0xF8200
     ret
 wrt_str32:
@@ -334,3 +528,60 @@ pm_str:
 
 times 2046 - ($-$$) db 0
 dw 0x6969
+
+
+;vbe_info:
+;    .signature db "VBE2"
+;    .dat       resb 512 - 4
+;struct vbe_info_structure {
+; 4 char[4] signature = "VESA";	// must be "VESA" to indicate valid VBE support
+; 6 uint16_t version;			// VBE version; high byte is major version, low byte is minor version
+;10 uint32_t oem;			    // segment:offset pointer to OEM
+;14	uint32_t capabilities;		// bitfield that describes card capabilities
+;18	uint32_t video_modes;		// segment:offset pointer to list of supported video modes
+;20	uint16_t video_memory;		// amount of video memory in 64KB blocks
+;	uint16_t software_rev;		// software revision
+;	uint32_t vendor;			// segment:offset to card vendor string
+;	uint32_t product_name;		// segment:offset to card model name
+;	uint32_t product_rev;		// segment:offset pointer to product revision
+;	char reserved[222];		// reserved for future expansion
+;	char oem_data[256];		// OEM BIOSes store their strings in this area
+;} __attribute__ ((packed));
+
+;struct vbe_mode_info_structure {
+;	0x00  uint16_t attributes;
+;	0x02  uint8_t  window_a;
+;	0x03  uint8_t  window_b;
+;	0x04  uint16_t granularity;
+;	0x06  uint16_t window_size;
+;	0x08  uint16_t segment_a;
+;	0x0A  uint16_t segment_b;
+;	0x0C  uint32_t win_func_ptr;
+;	0x10  uint16_t pitch;
+;	0x12  uint16_t width;
+;	0x14  uint16_t height;
+;	0x16  uint8_t  w_char;
+;	0x17  uint8_t  y_char;
+;	0x18  uint8_t  planes;
+;	0x19  uint8_t  bpp;
+;	0x1A  uint8_t  banks;
+;	0x1B  uint8_t  memory_model;
+;	0x1C  uint8_t  bank_size;
+;	0x1D  uint8_t  image_pages;
+;	0x1E  uint8_t  reserved0;
+;
+;	0x1F  uint8_t  red_mask;
+;	0x20  uint8_t  red_position;
+;	0x21  uint8_t  green_mask;
+;	0x22  uint8_t  green_position;
+;	0x23  uint8_t  blue_mask;
+;	0x24  uint8_t  blue_position;
+;	0x25  uint8_t  reserved_mask;
+;	0x26  uint8_t  reserved_position;
+;	0x27  uint8_t  direct_color_attributes;
+;
+;	0x28  uint32_t framebuffer;
+;	0x2C  uint32_t off_screen_mem_off;
+;	0x30  uint16_t off_screen_mem_size;
+;	0x32  uint8_t  reserved1[206];
+;} __attribute__ ((packed));

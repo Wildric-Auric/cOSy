@@ -15,6 +15,12 @@ typedef struct {
 typedef struct { 
     int x; int y; int z;
 } i3;
+typedef struct {
+    float x; float y; 
+} f2;
+typedef struct {
+    float x; float y; float z;
+} f3;
 typedef unsigned char  uchar;
 typedef unsigned short ushort;
 typedef ui8 boolean;

@@ -23,8 +23,8 @@ void wrt_port_byte(ushort port, uchar data) {
 volatile ui32 tick;
 void timer_isr_cbk(isr_hdl_args arg) {
     ++tick;
-    vga_clear();
-    vga_print32(tick);
+    //vga_clear();
+    //vga_print32(tick);
 }
 void drv_init_timer(ui32 frq) {
     bind_int_hdl(32, timer_isr_cbk);
@@ -33,8 +33,6 @@ void drv_init_timer(ui32 frq) {
     wrt_port_byte(0x40, d & 0xFF);
     wrt_port_byte(0x40, (d>>8) & 0xFF);
 }
-
-
 
 
 
@@ -145,9 +143,8 @@ void sand_gui() {
 }
 //-------------------------------
 
-
 const char* a = "Hey there";
-
+ui16 glob = 42;
 void test_vga() {
     vga_put('X', 0, 0);
     vga_set_cur_pos2(10,3);
@@ -155,7 +152,17 @@ void test_vga() {
     vga_set_col(0xAA);
     vga_print16(vga_get_value2(10, 9));
     vga_go_next_line();
+    int x,y;
+    vga_set_col(0x0F);
+    vga_get_cur_pos2(&x,&y);
+    vga_set_cur_pos2(0,y);
     vga_update_gcur();  
+    vga_print16(glob);
+    vga_go_next_line();
+    //00003af0
+    vga_go_next_line();
+    vga_print(a);
+    //vga_print(a);
 }
 
 void print_line() {
@@ -166,13 +173,21 @@ void print_line() {
     vga_go_next_line();
 }
 
+
 int main() {
     drv_init_vga();
     vga_clear();
     set_idt();
     asm __volatile__("sti");
+    //drv_init_timer(100);
     drv_init_kb(); 
-    sand_gui();
+    //test_vga();
+    //sand_gui();
     //basic_text_editor();
+    //print_hex(0x12345678,0x10000000);  
+    vga_go_next_line();
+    test_print_vse_inf();
+    test_vse();
+    while (1){};
     return 0;
 }

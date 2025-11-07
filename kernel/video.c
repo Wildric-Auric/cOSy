@@ -107,27 +107,33 @@ int vga_print(const char* str) {
     return vga_ptr_vd->cur;
 }
 
-void print_hex(int n, int d) {
+void print_hex(ui32 n, ui32 d) {
     const char* lkup = "0123456789ABCDEF";
     int r = 0;
     int t = 0;
+    int l = 0;
     vga_print("0x");
-    do {
-        t = n / d; 
-        r = n % d;
-        vga_print_char(lkup[t]);
-        n = r;
-        d >>= 4;
-    } while (n);
+    ui32 digit = 5;
+    while (d) {
+        digit = mmin(n / d,15);       
+        vga_print_char(lkup[digit]);
+        n %= d;
+        d  = (~d)&(d>>4);
+    }
 }
+
 void vga_go_next_line() {
     vga_ptr_vd->cur += ((vga_ptr_vd->width - (vga_ptr_vd->cur/2) % vga_ptr_vd->width) * 2);
 }
 
-void vga_print16(int n) {
+
+void vga_print8(ui32 n) {
+    print_hex(n, 0x10);
+}
+void vga_print16(ui32 n) {
     print_hex(n, 0x1000);
 }
-void vga_print32(int n) {
+void vga_print32(ui32 n) {
     print_hex(n, 0x10000000);
 }
 
@@ -150,4 +156,42 @@ void drv_init_vga() {
     vga_ptr_vd->col   = 0x0F;
     vga_query_cur();
     vga_query_width();
+}
+
+//----------------
+void vse_put_pxl(i2* pos, i3* col) {
+    ui8* fmb = (ui8*)VBE_MODE_INFO_FMBUFF;
+    fmb     += pos->y * (*(ui16*)VBE_MODE_INFO_WIDTH) * 4 + pos->x * 4;
+    *fmb     = col->x;
+    *(fmb+1) = col->y;
+    *(fmb+2) = col->z;
+    *(fmb+3) = 0;
+}
+
+void test_vse() {
+    for (int i = 0; i < 1000; ++i) {
+    for (int j = 0; j < 1000; ++j) {
+        i2 pos = {i,j};
+        i3 col = {255,255,128};
+        vse_put_pxl(&pos,&col); 
+    }}
+}
+
+void test_print_vse_inf() {
+    vga_print("--------------");
+    vga_go_next_line();
+    vbe_mode_info* inf = (vbe_mode_info*)(VBE_MODE_INFO);
+    #define pr(s,n,d) \
+    vga_print(s); \
+    print_hex(n, d); \
+    vga_go_next_line();
+    pr("width : " , inf->width,       0x1<<12);
+    pr("height: " , inf->height,      0x1<<12);
+    pr("bpp   : " , inf->bpp,         0x1<<4)
+    pr("memm  : " , inf->memory_model,0x1<<4);
+    pr("fmb   : " , inf->framebuffer, 0x1<<28);
+    #undef pr
+
+    vga_print("--------------");
+    vga_go_next_line();
 }

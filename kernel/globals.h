@@ -28,5 +28,6 @@ typedef ui8 boolean;
 
 #define mmin(a,b) ((a)<(b)?(a):(b))
 #define mmax(a,b) ((a)>(b)?(a):(b))
+#define clamp(a,mi,ma) (mmax(mmin(a,ma),mi))
 
 #endif

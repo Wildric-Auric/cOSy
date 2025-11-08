@@ -159,25 +159,8 @@ void drv_init_vga() {
 }
 
 //----------------
-void vse_put_pxl(i2* pos, i3* col) {
-    ui8* fmb = (ui8*)VBE_MODE_INFO_FMBUFF;
-    fmb     += pos->y * (*(ui16*)VBE_MODE_INFO_WIDTH) * 4 + pos->x * 4;
-    *fmb     = col->x;
-    *(fmb+1) = col->y;
-    *(fmb+2) = col->z;
-    *(fmb+3) = 0;
-}
 
-void test_vse() {
-    for (int i = 0; i < 1000; ++i) {
-    for (int j = 0; j < 1000; ++j) {
-        i2 pos = {i,j};
-        i3 col = {255,255,128};
-        vse_put_pxl(&pos,&col); 
-    }}
-}
-
-void test_print_vse_inf() {
+void vbe_vga_print_info() {
     vga_print("--------------");
     vga_go_next_line();
     vbe_mode_info* inf = (vbe_mode_info*)(VBE_MODE_INFO);
@@ -185,13 +168,149 @@ void test_print_vse_inf() {
     vga_print(s); \
     print_hex(n, d); \
     vga_go_next_line();
-    pr("width : " , inf->width,       0x1<<12);
-    pr("height: " , inf->height,      0x1<<12);
-    pr("bpp   : " , inf->bpp,         0x1<<4)
-    pr("memm  : " , inf->memory_model,0x1<<4);
-    pr("fmb   : " , inf->framebuffer, 0x1<<28);
+    pr("width     : " , inf->width         ,0x1<<12);
+    pr("height    : " , inf->height        ,0x1<<12);
+    pr("bpp       : " , inf->bpp           ,0x1<<4)
+    pr("memm      : " , inf->memory_model  ,0x1<<4);
+    pr("fmb       : " , inf->framebuffer   ,0x1<<28);
+    pr("redp      : " , inf->red_position  ,0x1<<4);
+    pr("bluep     : " , inf->blue_position ,0x1<<4);
+    pr("greenp    : " , inf->green_position,0x1<<4);
+    pr("redmsk    : " , inf->red_mask      ,0x1<<4);
+    pr("bluemsk   : " , inf->blue_mask     ,0x1<<4);
+    pr("greenmsk  : ", inf->green_mask     ,0x1<<4);
     #undef pr
-
     vga_print("--------------");
     vga_go_next_line();
 }
+
+void vbe_put_pxl(i2* pos, i3* col) {
+    vbe_mode_info* inf = (vbe_mode_info*)(VBE_MODE_INFO);
+    ui8* fmb = (ui8*)inf->framebuffer;
+    ui16 lb  = inf->pitch;
+    fmb     += (lb * pos->y + pos->x * 4);
+    *fmb     = (ui8)col->z;
+    *(fmb+1) = (ui8)col->y;
+    *(fmb+2) = (ui8)col->x;
+    *(fmb+3) = 255;
+}
+
+void vbe_test_fill() {
+    vbe_mode_info* inf = (vbe_mode_info*)(VBE_MODE_INFO);
+    for (int i = 0; i < inf->width; ++i) {
+    for (int j = 0; j < inf->height; ++j) {
+        i2 pos = {i,j};
+        i3 col = {255,0,0};
+        vbe_put_pxl(&pos,&col); 
+    }}
+}
+
+//-------------------------
+#define unreal(x)  ((x) / ((x) + 0.155f) * 1.019f)
+static float sdf_box(f2 point, f2 box_rect) {
+   float ax = (point.x < 0.0f) ? -point.x : point.x;
+   float ay = (point.y < 0.0f) ? -point.y : point.y;
+   f2 delta;
+   delta.x = ax - box_rect.x;
+   delta.y = ay - box_rect.y;
+   // max(delta, 0.0)
+   float mx0 = (delta.x > 0.0f) ? delta.x : 0.0f;
+   float my0 = (delta.y > 0.0f) ? delta.y : 0.0f;
+   float len_sq = mx0*mx0 + my0*my0;
+   float approx_len = len_sq*10.0;
+   float mm = mmax(delta.x, delta.y);
+   float mm2 = mmin(mm, 0.0f);
+   return approx_len + mm2;
+}
+void vbe_test_eclipse() {
+    vbe_mode_info* inf = (vbe_mode_info*)(VBE_MODE_INFO);
+    int w = 1000;
+    int h = 1000;
+    for (int i = 0; i < w; ++i) {
+    for (int j = 0; j < h; ++j) {
+        i2 ppos = {i,j};
+        i3 pcol = {255,0,0};
+        f2 uv  = {(float)i / w, (float)j / h};
+        uv.x = i / (float)w;
+        uv.y = j / (float)h;
+        uv.x -= 0.5f;
+        uv.y -= 0.5f;
+        f2 uv0 = uv;
+        f2 line_offset = { 0.0f, 0.0f };
+        f2 pos;
+        pos.x = uv.x;
+        pos.y = uv.y - 0.00f;
+        f2 line_pos;
+        line_pos.x = uv.x - 0.0f;
+        line_pos.y = uv.y - 0.34f;
+        float r = 0.38f;
+        //no sqrt, choose a coefficient
+        float sqrt_c = 8.0f;
+        float pos_len_sq = pos.x*pos.x + pos.y*pos.y;
+        float pos_len = pos_len_sq * sqrt_c;
+        float l = pos_len / r;
+        // n = pos / l avoid div by zero
+        f2 n;
+        float ll = l != 0.0f ? l : 1000.0f;
+        n.x = pos.x / ll;
+        n.y = pos.y / ll;
+      // color setup
+        f3 ecol = { 242.0f/255.0f, 80.0f/255.0f, 29.0f/255.0f };
+        f3 col = { 0.0f, 0.0f, 0.0f };
+        float d = l; 
+        // thresholds
+        f2 tresh;
+        tresh.x = 0.95f * r;
+        tresh.y = 1.0f * r;
+        f2 tresh_0;
+        tresh_0.x = tresh.x - 0.02f * r;
+        tresh_0.y = tresh.x;
+        // smoothstep(tresh0.x, tresh0.y, d)
+        float edge_0 = tresh_0.x;
+        float edge_1 = tresh_0.y;
+        float s = 0.0f;
+        if (edge_1 != edge_0) {
+            float t = (d - edge_0) / (edge_1 - edge_0);
+            // clamp 0..1
+            if (t < 0.0f) t = 0.0f;
+            if (t > 1.0f) t = 1.0f;
+            s = t * t * (3.0f - 2.0f * t);
+        } 
+        else {s = (d >= edge_1) ? 1.0f : 0.0f;}
+        // col = smoothstep * vec3(1.0)
+        col.x = s;
+        col.y = s;
+        col.z = s;
+        int outside = 0;
+        if (d > tresh.x && tresh.y < 1.0f) {
+            float tmp   = (tresh.y - tresh.x);
+            tmp   = (tmp == 0.0f) ? 0.001f : tmp;
+            float coord = (d - tresh.x)/(tmp);
+            coord = (coord == 0.0f) ? 0.001f : coord * 0.2f; 
+            col.x = ecol.x / coord;
+            col.y = ecol.y / coord;
+            col.z = ecol.z / coord;
+            outside = 1;
+        }
+        f2 box_rect = { 0.0f, 0.2f };
+        float l_rect = sdf_box(line_pos, box_rect);
+        float abs_lrect = (l_rect < 0.0f) ? -l_rect : l_rect;
+        abs_lrect       = mmax(0.0001f, abs_lrect);
+        // col += uv0.y * ecol * 0.007 / abs(lrect)
+        float eps = 1e-6f;
+        float inv = (abs_lrect < eps) ? 0.0f : (1.0f / abs_lrect);
+            col.x += uv0.y * ecol.x * 0.007f * inv;
+            col.y += uv0.y * ecol.y * 0.007f * inv;
+            col.z += uv0.y * ecol.z * 0.007f * inv;
+        float tx = unreal(col.x); if (tx < 0.0f) tx = 0.0f; if (tx > 1.0f) tx = 1.0f; col.x = tx;
+        float ty = unreal(col.y); if (ty < 0.0f) ty = 0.0f; if (ty > 1.0f) ty = 1.0f; col.y = ty;
+        float tz = unreal(col.z); if (tz < 0.0f) tz = 0.0f; if (tz > 1.0f) tz = 1.0f; col.z = tz;
+        i2 pi = {i,j};
+        i3 res; 
+        res.x = (int)(col.x * 255.0f);
+        res.y = (int)(col.y * 255.0f);
+        res.z = (int)(col.z * 255.0f);
+        vbe_put_pxl(&pi, &res);
+    }}
+} 
+//-------------------------

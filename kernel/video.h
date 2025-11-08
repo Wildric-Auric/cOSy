@@ -103,9 +103,10 @@ typedef struct vbe_mode_info_structure {
 } __attribute__((packed)) vbe_mode_info;
 
 
-void vse_put_pxl(i2* pos, i3* col);
-void test_vse();
-void test_print_vse_inf();
+void vbe_put_pxl(i2* pos, i3* col);
+void vbe_test_fill();
+void vbe_test_eclipse();
+void vbe_vga_print_info();
 
 
 #endif

@@ -173,7 +173,6 @@ void print_line() {
     vga_go_next_line();
 }
 
-
 int main() {
     drv_init_vga();
     vga_clear();
@@ -184,10 +183,9 @@ int main() {
     //test_vga();
     //sand_gui();
     //basic_text_editor();
-    //print_hex(0x12345678,0x10000000);  
     vga_go_next_line();
-    test_print_vse_inf();
-    test_vse();
+    vbe_vga_print_info();
+    vbe_test_eclipse();
     while (1){};
     return 0;
 }

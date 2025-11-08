@@ -304,7 +304,7 @@ init_stage2:
     mov ax, 0xFFFF 
     mov es, ax 
     mov bx, 0x10
-    mov al, 24 
+    mov al, 32 
     mov cl, 5
     call ldsk
     ; Do it right before PM to continue using VGA here
@@ -398,11 +398,7 @@ enable_vesa:
         mov bx, [vesa_sel_vid_mode_offset]
         mov cx, [es:bx]
         call get_vesa_mode_info 
-
-        ;wrts OK_str ; todo
-        ;wrtn [vesa_mode_offset + 0x2A - 0x7E00]
         ;ret ; todo
-
         mov bx, cx
         and bx, 0x3FF
         or  bx,  0x4000 

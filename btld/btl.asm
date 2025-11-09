@@ -398,7 +398,7 @@ enable_vesa:
         mov bx, [vesa_sel_vid_mode_offset]
         mov cx, [es:bx]
         call get_vesa_mode_info 
-        ;ret ; todo
+        ; ret ; todo
         mov bx, cx
         and bx, 0x3FF
         or  bx,  0x4000 
@@ -497,8 +497,8 @@ init_pm:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    mov ebp, 0x7C00 ;stack must be divisible by 16
-    ; mov ebp, 0x00F00000
+    ; mov ebp, 0x7C00 ; stack must be divisible by 16
+    mov ebp, 0x00F00000
     mov esp, ebp
     mov ebx, pm_str + 0x7E00
     ; call wrt_str32

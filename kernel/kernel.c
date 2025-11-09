@@ -20,7 +20,7 @@ void wrt_port_byte(ushort port, uchar data) {
     __asm__("out %%al, %%dx" : : "a" (data), "d" (port));
 }
 
-volatile ui32 tick;
+volatile ui8 tick;
 void timer_isr_cbk(isr_hdl_args arg) {
     ++tick;
     //vga_clear();
@@ -183,22 +183,49 @@ int main() {
     vga_clear();
     set_idt();
     asm __volatile__("sti");
-    //drv_init_timer(100);
+    drv_init_timer(100);
     drv_init_kb(); 
     init_sys_font();
-    VBE_txt_ctx ctx;
-    ctx.siz.x = 6;
-    ctx.siz.y = 6;
-    vbe_init_ctx(&ctx, &ctx.siz); ctx.gap.x = 0; ctx.gap.y = 0;
     //vbe_put_char('c',&ctx);
-    vbe_put_string("Not Working OS", &ctx);
-    //vbe_test_fill();
-    //test_vga();
-    //sand_gui();
-    //basic_text_editor();
-    //vga_go_next_line();
-    //vbe_vga_print_info();
-    //vbe_test_eclipse();
+    vbe_mode_info* mi = vbe_get_mode_info();
+    vbe_txt_cnst  c;
+    c.end_loc       = 500;
+    c.next_line_pos = 0;
+
+    vbe_line_info li;
+    li.level = c.end_loc;
+    li.width = 1;
+    li.col.x = 100; li.col.y = 100; li.col.z = 150;
+    vbe_draw_line_vr(&li);
+
+    ui8 tt = 0;
+    vbe_txt_ctx ctx;
+    vbe_txt_ctx bct; bct.size.x = 4; bct.size.y = 4; 
+    ctx.size.x = 2;
+    ctx.size.y = 2;
+    vbe_init_ctx(&ctx, &ctx.size); ctx.gap.x = 0; ctx.gap.y = 0;
+    vbe_init_ctx(&bct, &bct.size); bct.gap.x = 0; bct.gap.y = 0;
+    bct.bcol.x = 0; bct.bcol.y = 0; bct.bcol.z = 255;
+    bct.col.x  = 100.0; bct.col.y = 0; bct.col.z = 0; 
+    vbe_put_str("Be Right Back!", &bct);
+    vbe_go_next_line(&bct); bct.cur.x = 0;
+    ctx.cur = bct.cur;
+    ctx.bcol.x = 0; ctx.bcol.y = 0; ctx.bcol.z = 0;
+    ctx.col.x = 0; ctx.col.z = 0;
+    vbe_display_info(&ctx);
+    //vbe_put_str_check("Wake up neo,the matrix has you", &ctx, &c);
+
+    while (1) {
+        bct.col.x  = tt*10.0; bct.col.y = 0; bct.col.z = 0; 
+        bct.cur.x  = 0;
+        bct.cur.y  = 0;
+        vbe_put_str("Be Right Back!", &bct);
+        vbe_go_next_line(&bct); bct.cur.x = 0;
+        ctx.cur = bct.cur;
+        vbe_display_info(&ctx);
+        tt++;
+    }
+
     while (1){};
     return 0;
 }

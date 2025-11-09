@@ -1,5 +1,6 @@
 #include "inter.h"
 #include "video.h"
+#include "util.h"
 
 
 extern uchar rd_port_byte(ushort port);
@@ -91,9 +92,13 @@ void set_idt() {
 }
 
 void isr_hdl(isr_hdl_args arg) {
-    vga_print("Interrupt received: ");
-    vga_print16(arg.num);
-    vga_go_next_line();
+    char num[8];
+    vbe_txt_ctx ctx;
+    vbe_init_ctx_def(&ctx);
+    vbe_put_str("Interrupt reveived: ", &ctx);
+    cnv_num_hex_str(arg.num, 0x1000, num);
+    vbe_put_str(num, &ctx);
+    vbe_go_next_line(&ctx); ctx.cur.x = 0;
 }
 
 void bind_int_hdl(ui8 i, void(*f)(isr_hdl_args)) {

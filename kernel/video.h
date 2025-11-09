@@ -104,19 +104,41 @@ typedef struct vbe_mode_info_structure {
 
 typedef struct {
     i2 cur;
-    i2 siz;
+    i2 size;
     i2 gap;
     i3 col;
     i3 bcol;
-} VBE_txt_ctx;
+} vbe_txt_ctx;
 
-void vbe_vga_print_info();
-void vbe_init_ctx(VBE_txt_ctx* ctx, i2* size);
+typedef struct {
+    i32 end_loc;  
+    int next_line_pos;
+} vbe_txt_cnst;
+
+typedef struct {
+    i2  src_dst;
+    int level;
+    int width;
+    i3  col;
+} vbe_line_info;
+
+//to test when vga is enabled
+void vbe_vga_display_info();
+//------------------------
+void vbe_display_info(vbe_txt_ctx* ctx);
+void vbe_init_ctx(vbe_txt_ctx* ctx, i2* size);
+void vbe_init_ctx_def(vbe_txt_ctx* ctx);
 void vbe_put_pxl(i2* pos, i3* col);
 void vbe_test_fill();
 void vbe_test_eclipse();
-void vbe_put_char(char c, VBE_txt_ctx*);
-void vbe_put_string(const char*, VBE_txt_ctx*);
-
-
+void vbe_put_char(char c, vbe_txt_ctx*);
+void vbe_put_str(const char*, vbe_txt_ctx*);
+int  vbe_put_str_to(const char* str,int n, vbe_txt_ctx* ctx);
+void vbe_put_str_check(const char*, vbe_txt_ctx*, vbe_txt_cnst*);
+void vbe_draw_line_hz_ft(vbe_line_info*);
+void vbe_draw_line_vr_ft(vbe_line_info*);
+void vbe_draw_line_hz(vbe_line_info*);
+void vbe_draw_line_vr(vbe_line_info*);
+void vbe_go_next_line(vbe_txt_ctx*);
+vbe_mode_info* vbe_get_mode_info(); 
 #endif

@@ -46,7 +46,7 @@ void vga_query_cur();
 void vga_query_width();
 void drv_init_vga();
 
-//------------------------------------------------
+//---------------------VBE Data--------------------------
 // https://wiki.osdev.org/User:Omarrx024/VESA_Tutorial
 // https://wiki.osdev.org/VESA_Video_Modes
 typedef struct {
@@ -102,11 +102,21 @@ typedef struct vbe_mode_info_structure {
 	ui8  reserved1[206];
 } __attribute__((packed)) vbe_mode_info;
 
+typedef struct {
+    i2 cur;
+    i2 siz;
+    i2 gap;
+    i3 col;
+    i3 bcol;
+} VBE_txt_ctx;
 
+void vbe_vga_print_info();
+void vbe_init_ctx(VBE_txt_ctx* ctx, i2* size);
 void vbe_put_pxl(i2* pos, i3* col);
 void vbe_test_fill();
 void vbe_test_eclipse();
-void vbe_vga_print_info();
+void vbe_put_char(char c, VBE_txt_ctx*);
+void vbe_put_string(const char*, VBE_txt_ctx*);
 
 
 #endif

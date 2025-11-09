@@ -314,3 +314,44 @@ void vbe_test_eclipse() {
     }}
 } 
 //-------------------------
+extern ui8 sys_font[128][16];
+extern i2  sys_font_metrics;
+
+void vbe_init_ctx(VBE_txt_ctx* ctx, i2* size) {
+    ctx->col.x  = 255;
+    ctx->col.y  = 255;
+    ctx->col.z  = 255;
+    ctx->bcol.x = 0;
+    ctx->bcol.y = 0;
+    ctx->bcol.z = 0;
+    ctx->gap.x  = size->x*sys_font_metrics.x/4;
+    ctx->gap.y  = size->y*sys_font_metrics.y/4;
+    ctx->siz    = *size;
+}
+
+void vbe_put_char(char c, VBE_txt_ctx* ctx) {
+    ui8 msk;
+    ui8 lc;
+    i2  pos;
+    i3* col;
+    ui32 m = 1 << (sys_font_metrics.x-1);
+    for (int l = 0; l < sys_font_metrics.y*ctx->siz.y; ++l) {
+        lc = sys_font[c][l/ctx->siz.y];
+    for (int i = 0; i < sys_font_metrics.x*ctx->siz.x; ++i) {
+        ui8 msk = m >> (i/ctx->siz.x);
+        pos.y = ctx->cur.y + l;
+        pos.x = ctx->cur.x + i;
+        col   = (lc & msk) ? &ctx->col : &ctx->bcol;
+        vbe_put_pxl(&pos, col);
+    }}
+    ctx->cur.x += (sys_font_metrics.x * ctx->siz.x) + ctx->gap.x;
+    //ctx->cur.y += (sys_font_metrics.y * ctx->siz.y) + ctx->gap.y;
+}
+
+void vbe_put_string(const char* str, VBE_txt_ctx* ctx) {
+    char c;
+    int  i = 0;
+    while (c = str[i++]) {
+        vbe_put_char(c, ctx);
+    }
+}

@@ -173,6 +173,11 @@ void print_line() {
     vga_go_next_line();
 }
 
+extern ui8 sys_font[128][16];
+
+
+
+extern void init_sys_font();
 int main() {
     drv_init_vga();
     vga_clear();
@@ -180,12 +185,20 @@ int main() {
     asm __volatile__("sti");
     //drv_init_timer(100);
     drv_init_kb(); 
+    init_sys_font();
+    VBE_txt_ctx ctx;
+    ctx.siz.x = 6;
+    ctx.siz.y = 6;
+    vbe_init_ctx(&ctx, &ctx.siz); ctx.gap.x = 0; ctx.gap.y = 0;
+    //vbe_put_char('c',&ctx);
+    vbe_put_string("Not Working OS", &ctx);
+    //vbe_test_fill();
     //test_vga();
     //sand_gui();
     //basic_text_editor();
-    vga_go_next_line();
-    vbe_vga_print_info();
-    vbe_test_eclipse();
+    //vga_go_next_line();
+    //vbe_vga_print_info();
+    //vbe_test_eclipse();
     while (1){};
     return 0;
 }

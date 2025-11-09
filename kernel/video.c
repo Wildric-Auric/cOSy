@@ -1,10 +1,10 @@
 #include "video.h"
+#include "util.h"
 extern uchar rd_port_byte(ushort port);
 extern void  wrt_port_byte(ushort port, uchar data);
 
 VGA_Data  vga_def_vd = {};
 VGA_Data* vga_ptr_vd = &vga_def_vd;
-
 
 ui16 vga_get_value(int p) {
     volatile char* vm = (volatile char*)VGA_VIDEO_MEMORY;
@@ -160,7 +160,7 @@ void drv_init_vga() {
 
 //----------------
 
-void vbe_vga_print_info() {
+void vbe_vga_display_info() {
     vga_print("--------------");
     vga_go_next_line();
     vbe_mode_info* inf = (vbe_mode_info*)(VBE_MODE_INFO);
@@ -317,41 +317,143 @@ void vbe_test_eclipse() {
 extern ui8 sys_font[128][16];
 extern i2  sys_font_metrics;
 
-void vbe_init_ctx(VBE_txt_ctx* ctx, i2* size) {
+
+void vbe_init_ctx_def(vbe_txt_ctx* ctx) {
+    ctx->size.x = 1; ctx->size.y = 1;
+    vbe_init_ctx(ctx, &ctx->size);
+}
+
+void vbe_init_ctx(vbe_txt_ctx* ctx, i2* size) {
+    ctx->cur.x  = 0;
+    ctx->cur.y  = 0;
     ctx->col.x  = 255;
     ctx->col.y  = 255;
     ctx->col.z  = 255;
     ctx->bcol.x = 0;
     ctx->bcol.y = 0;
     ctx->bcol.z = 0;
-    ctx->gap.x  = size->x*sys_font_metrics.x/4;
-    ctx->gap.y  = size->y*sys_font_metrics.y/4;
-    ctx->siz    = *size;
+    ctx->size.x = size->x <= 0 ? 1 : size->x;
+    ctx->size.y = size->y <= 0 ? 1 : size->y;
+    ctx->gap.x  = ctx->size.x*sys_font_metrics.x/4;
+    ctx->gap.y  = ctx->size.y*sys_font_metrics.y/4;
 }
 
-void vbe_put_char(char c, VBE_txt_ctx* ctx) {
+void vbe_go_next_line(vbe_txt_ctx* ctx) {
+    ctx->cur.y += (ctx->size.y * sys_font_metrics.y 
+                 + ctx->gap.y);
+}
+
+void vbe_display_info(vbe_txt_ctx* ctx) {
+    char num[33];
+    vbe_mode_info* inf = (vbe_mode_info*)(VBE_MODE_INFO);
+    #define pr(s,n,d)           \
+    vbe_put_str(s, ctx);       \
+    cnv_num_hex_str(n, d, num); \
+    vbe_put_str(num, ctx);     \
+    vbe_go_next_line(ctx);     \
+    ctx->cur.x = 0; 
+    pr("width     : " , inf->width         ,0x1<<12);
+    pr("height    : " , inf->height        ,0x1<<12);
+    pr("bpp       : " , inf->bpp           ,0x1<<4)
+    pr("memm      : " , inf->memory_model  ,0x1<<4);
+    pr("fmb       : " , inf->framebuffer   ,0x1<<28);
+    pr("redp      : " , inf->red_position  ,0x1<<4);
+    pr("bluep     : " , inf->blue_position ,0x1<<4);
+    pr("greenp    : " , inf->green_position,0x1<<4);
+    pr("redmsk    : " , inf->red_mask      ,0x1<<4);
+    pr("bluemsk   : " , inf->blue_mask     ,0x1<<4);
+    pr("greenmsk  : ", inf->green_mask     ,0x1<<4);
+    #undef pr
+}
+
+void vbe_put_char(char c, vbe_txt_ctx* ctx) {
     ui8 msk;
     ui8 lc;
     i2  pos;
     i3* col;
     ui32 m = 1 << (sys_font_metrics.x-1);
-    for (int l = 0; l < sys_font_metrics.y*ctx->siz.y; ++l) {
-        lc = sys_font[c][l/ctx->siz.y];
-    for (int i = 0; i < sys_font_metrics.x*ctx->siz.x; ++i) {
-        ui8 msk = m >> (i/ctx->siz.x);
+    for (int l = 0; l < sys_font_metrics.y*ctx->size.y; ++l) {
+        lc = sys_font[c][l/ctx->size.y];
+    for (int i = 0; i < sys_font_metrics.x*ctx->size.x; ++i) {
+        ui8 msk = m >> (i/ctx->size.x);
         pos.y = ctx->cur.y + l;
         pos.x = ctx->cur.x + i;
         col   = (lc & msk) ? &ctx->col : &ctx->bcol;
         vbe_put_pxl(&pos, col);
     }}
-    ctx->cur.x += (sys_font_metrics.x * ctx->siz.x) + ctx->gap.x;
-    //ctx->cur.y += (sys_font_metrics.y * ctx->siz.y) + ctx->gap.y;
+    ctx->cur.x += (sys_font_metrics.x * ctx->size.x) + ctx->gap.x;
+    //ctx->cur.y += (sys_font_metrics.y * ctx->size.y) + ctx->gap.y;
 }
 
-void vbe_put_string(const char* str, VBE_txt_ctx* ctx) {
+void vbe_put_str(const char* str, vbe_txt_ctx* ctx) {
     char c;
     int  i = 0;
     while (c = str[i++]) {
         vbe_put_char(c, ctx);
     }
+}
+
+int vbe_put_str_to(const char* str,int n, vbe_txt_ctx* ctx) {
+    char c;
+    int  i = 0;
+    while ((c = str[i]) && i != n) {
+        vbe_put_char(c, ctx);
+        i++;
+    }
+    return (c!=0) * i;
+}
+
+//puts a string, when arrives at limit define by constraint, it goes to next line
+//if limit is less than character width (*size + gap), nothing is output
+void vbe_put_str_check(const char* str, vbe_txt_ctx* ctx, vbe_txt_cnst* cnt) {
+    char c;
+    i32  i = 0;
+    i32 charw = sys_font_metrics.x * ctx->size.x + ctx->gap.x;
+    while (c = str[i]) {
+        int diff = cnt->end_loc - ctx->cur.x;
+        int n    = diff/charw;
+        if (!vbe_put_str_to(&str[i], n, ctx))
+            break;
+        ctx->cur.x  = cnt->next_line_pos;
+        ctx->cur.y += (sys_font_metrics.y * ctx->size.y) + ctx->gap.y;
+        i += n;
+    }
+}
+
+void vbe_draw_line_hz_ft(vbe_line_info* inf) {
+    i2 pos;
+    int j;
+    int i = -inf->width;
+    do {
+       for (j = inf->src_dst.x; j < inf->src_dst.y; ++j) {
+            pos.y = inf->level+i; pos.x = j;  
+            vbe_put_pxl(&pos, &inf->col);
+       }
+    } while (++i < inf->width);
+}
+void vbe_draw_line_vr_ft(vbe_line_info* inf) {
+    i2 pos;
+    int j;
+    int i = -inf->width;
+    do {
+       for (j = inf->src_dst.x; j < inf->src_dst.y; ++j) {
+            pos.x = inf->level+i; pos.y = j;  
+            vbe_put_pxl(&pos, &inf->col);
+       }
+    } while (++i < inf->width);
+
+}
+void vbe_draw_line_hz(vbe_line_info* inf) {
+    inf->src_dst.x = 0;
+    inf->src_dst.y = vbe_get_mode_info()->width;
+    vbe_draw_line_hz_ft(inf);
+}
+void vbe_draw_line_vr(vbe_line_info* inf) {
+    inf->src_dst.x = 0;
+    inf->src_dst.y = vbe_get_mode_info()->height;
+    vbe_draw_line_vr_ft(inf);
+}
+
+vbe_mode_info* vbe_get_mode_info() {
+    return (vbe_mode_info*)(VBE_MODE_INFO);
 }

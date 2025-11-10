@@ -1,11 +1,10 @@
 #include "kb.h"
 #include "inter.h"
+#include "port.h"
 
 //wiki.osdev.org/index.php?title=I8042_PS/2_Controller
 //wiki.osdev.org/PS/2_Keyboard#Scan_Code_Sets
-//
-extern uchar rd_port_byte(ushort port);
-extern void  wrt_port_byte(ushort port, uchar data);
+
 
 ui16 kb_stack[256];
 ui8 kb_stack_ptr;
@@ -25,7 +24,7 @@ ui16 kb_peek_scode() {
 }
 
 void kb_cbk() {
-    ui8  scancode            = rd_port_byte(0x60);
+    ui8  scancode            = p_in(0x60);
     ui16 ev                  = (scancode >= 0x80) ? 0x2 : 0x1; //if bigger than 0x80 its release
     ui16 nsc =  scancode - (ev & key_event_enm_released ?  0x80 : 0x0);
     kb_stack[kb_stack_ptr++] = (ev << 8)|(nsc);

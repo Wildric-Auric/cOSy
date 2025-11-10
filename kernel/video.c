@@ -1,7 +1,7 @@
 #include "video.h"
 #include "util.h"
-extern uchar rd_port_byte(ushort port);
-extern void  wrt_port_byte(ushort port, uchar data);
+extern uchar p_in(ushort port);
+extern void  p_out(ushort port, uchar data);
 
 VGA_Data  vga_def_vd = {};
 VGA_Data* vga_ptr_vd = &vga_def_vd;
@@ -52,10 +52,10 @@ void vga_clear() {
 }
 
 void vga_set_gcur_pos(int p) {
-    wrt_port_byte(0x3D4, 0xF);
-    wrt_port_byte(0x3D5, p & 0xFF);
-    wrt_port_byte(0x3D4, 0xE);
-    wrt_port_byte(0x3D5, (p >> 8) & 0xFF);
+    p_out(0x3D4, 0xF);
+    p_out(0x3D5, p & 0xFF);
+    p_out(0x3D4, 0xE);
+    p_out(0x3D5, (p >> 8) & 0xFF);
 }
 
 void vga_update_gcur() {
@@ -86,10 +86,10 @@ void vga_set_cur_pos2(int x, int y) {
 }
 
 void vga_get_gcur_pos2(int* x, int* y) {
-    wrt_port_byte(0x3D4, 0x0F); 
-    *x = rd_port_byte(0x3D5);
-    wrt_port_byte(0x3D4, 0x0E); 
-    *y = rd_port_byte(0x3D5);
+    p_out(0x3D4, 0x0F); 
+    *x = p_in(0x3D5);
+    p_out(0x3D4, 0x0E); 
+    *y = p_in(0x3D5);
 }
 
 int vga_get_gcur_pos() {
@@ -138,16 +138,16 @@ void vga_print32(ui32 n) {
 }
 
 void vga_query_cur() {
-    wrt_port_byte(0x3D4, 14); //request high byte of cursor pos, returned in vga data register
-    vga_ptr_vd->cur = rd_port_byte(0x3D5) << 8;
-    wrt_port_byte(0x3D4, 15); //low byte
-    vga_ptr_vd->cur |= rd_port_byte(0x3D5); 
+    p_out(0x3D4, 14); //request high byte of cursor pos, returned in vga data register
+    vga_ptr_vd->cur = p_in(0x3D5) << 8;
+    p_out(0x3D4, 15); //low byte
+    vga_ptr_vd->cur |= p_in(0x3D5); 
     vga_ptr_vd->cur *= 2;
 }
 
 void vga_query_width() {
-    wrt_port_byte(0x3D4, 1); 
-    vga_ptr_vd->width = rd_port_byte(0x3D5) + 1;
+    p_out(0x3D4, 1); 
+    vga_ptr_vd->width = p_in(0x3D5) + 1;
 }
 
 void drv_init_vga() { 

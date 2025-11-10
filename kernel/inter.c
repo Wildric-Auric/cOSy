@@ -1,10 +1,8 @@
 #include "inter.h"
 #include "video.h"
 #include "util.h"
+#include "port.h"
 
-
-extern uchar rd_port_byte(ushort port);
-extern void wrt_port_byte(ushort port, uchar data);
 
 
 idt_gate idt[256];
@@ -77,16 +75,16 @@ void set_idt() {
     SET_GATE2(15); 
     
     //Remap the PIC
-    wrt_port_byte(0x20, 0x11);
-    wrt_port_byte(0xA0, 0x11);
-    wrt_port_byte(0x21, 0x20);
-    wrt_port_byte(0xA1, 0x28);
-    wrt_port_byte(0x21, 0x04);
-    wrt_port_byte(0xA1, 0x02);
-    wrt_port_byte(0x21, 0x01);
-    wrt_port_byte(0xA1, 0x01);
-    wrt_port_byte(0x21, 0x0);
-    wrt_port_byte(0xA1, 0x0);     
+    p_out(0x20, 0x11);
+    p_out(0xA0, 0x11);
+    p_out(0x21, 0x20);
+    p_out(0xA1, 0x28);
+    p_out(0x21, 0x04);
+    p_out(0xA1, 0x02);
+    p_out(0x21, 0x01);
+    p_out(0xA1, 0x01);
+    p_out(0x21, 0x0);
+    p_out(0xA1, 0x0);     
 
     load_idt();
 }
@@ -107,8 +105,8 @@ void bind_int_hdl(ui8 i, void(*f)(isr_hdl_args)) {
 
 void irq_hdl(isr_hdl_args arg) {
     if (arg.num > 39)
-    wrt_port_byte(0xA0, 0x20);
-    wrt_port_byte(0x20, 0x20);
+    p_out(0xA0, 0x20);
+    p_out(0x20, 0x20);
     if (!irq_hdl_cbks[arg.num]) return;
     irq_hdl_cbks[arg.num](arg);
 }

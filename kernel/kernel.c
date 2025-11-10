@@ -2,20 +2,7 @@
 #include "util.h"
 #include "kb.h"
 #include "video.h"
-
-typedef struct  {
-    int cur; 
-    int width;
-} TTY_Data;
-
-uchar rd_port_byte(ushort port) {
-    uchar res; 
-    __asm__("in %%dx, %%al" : "=a" (res) : "d" (port));
-    return res;
-}
-void wrt_port_byte(ushort port, uchar data) {
-    __asm__("out %%al, %%dx" : : "a" (data), "d" (port));
-}
+#include "port.h"
 
 volatile ui8 tick;
 void timer_isr_cbk(isr_hdl_args arg) {
@@ -26,9 +13,9 @@ void timer_isr_cbk(isr_hdl_args arg) {
 void drv_init_timer(ui32 frq) {
     bind_int_hdl(32, timer_isr_cbk);
     ui32 d = 1193180 / frq;
-    wrt_port_byte(0x43, 0x36);
-    wrt_port_byte(0x40, d & 0xFF);
-    wrt_port_byte(0x40, (d>>8) & 0xFF);
+    p_out(0x43, 0x36);
+    p_out(0x40, d & 0xFF);
+    p_out(0x40, (d>>8) & 0xFF);
 }
 
 

@@ -3,9 +3,6 @@
 #include "kb.h"
 #include "video.h"
 
-
-#define VIDEO_MEMORY  0xb8000
-
 typedef struct  {
     int cur; 
     int width;

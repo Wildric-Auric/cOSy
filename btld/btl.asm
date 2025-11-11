@@ -19,7 +19,10 @@ jmp $
 ; 0x500-0x7BFF --> stack
 ; 0x7C00-0x7DFF--> bootsector
 ; 0x7E00-0x8600--> stage 2 (2048 bytes)
-; 0x8600-0x7FFF--> space used by stage 2
+; 0x8600-0x7FFF--> space used by stage 2 (see next lines)
+; 0x8600-0x8A00--> data about VBE
+; 0x8A00-0x8A02--> count of memory map
+; 0x8A02- ...  --> memory map output
 
 ; changed->
 ; 0x8600-0x7FFF--> kernel  
@@ -141,7 +144,7 @@ ldsk:
     mov ch, 0x0
     mov dh, 0x0
     mov dl, [boot_drive]
-    int 0x13
+    int 0x13 
     jc  ldsk_err
     pop bx
     cmp al, bl 
@@ -153,7 +156,7 @@ ldsk_err:
     mov bx, ldsk_err_str
     call wrt_str
     xor bx, bx 
-    mov bh, ah
+    mov bl, ah
     call wrt_num16
     popa
     ret
@@ -304,16 +307,71 @@ init_stage2:
     mov ax, 0xFFFF 
     mov es, ax 
     mov bx, 0x10
-    mov al, 32 
+    mov al, 64 
     mov cl, 5
     call ldsk
-    ; Do it right before PM to continue using VGA here
+    ; get free memory map
+    call get_mem_map
+    ; Do it right before PM to continue using VGA before
     ; Enable VESA
     call enable_vesa 
     ; switch to pm
     call switch_to_pm 
     ret
 
+; https://wiki.osdev.org/Detecting_Memory_(x86)#BIOS_Function:_INT_0x15,_EAX_=_0xE820
+get_mem_map:
+    pusha
+    mov ax, 0
+    push ax
+    ; ES:DI -> 0x8A00
+    mov ax, 0x8A0 
+    mov es, ax
+    mov di, 2
+    ; clear ebx
+    xor ebx, ebx
+get_mem_map_lp:
+    ; set edx
+    mov edx, 0x534D4150 
+    ; set eax
+    mov eax, 0x0000E820
+    ; set ecx
+    mov ecx, 0x18
+    int 0x15
+    jc get_mem_map_err
+    cmp ebx, 0x0 
+    je get_mem_map_end
+    ; next ieration setup
+    xor ah, ah
+    mov al, 0x18 
+    add di, ax
+    pop  ax 
+    add ax, 1
+    push ax
+    jmp get_mem_map_lp
+get_mem_map_end:
+    ; print info
+    pop ax
+    mov bx, mem_count_str
+    wrts mem_count_str 
+    wrtn ax
+    call wrt_endl
+    ; store memory count
+    push es 
+    mov bx, 0x8A0
+    mov es, bx 
+    xor bx, bx
+    mov [es:bx], ax
+    pop es
+    ; return
+    popa
+    ret
+
+get_mem_map_err:
+    wrts err_str
+    popa
+    ret
+    
 get_vesa_info:
     pusha
     mov ax, 0x4F00
@@ -481,6 +539,8 @@ switch_to_pm:
     jmp code_seg:(init_pm + 0x7E00)
     ret
 
+mem_count_str:
+    db "Memory count: ",0
 vesa_err_str:
     db "VESA Bios not supported",0
 vesa_mode_support_str:

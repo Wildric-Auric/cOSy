@@ -104,7 +104,7 @@ typedef struct vbe_mode_info_structure {
 
 typedef struct {
     i2 cur;
-    i2 size;
+    f2 size;
     i2 gap;
     i3 col;
     i3 bcol;
@@ -124,7 +124,7 @@ typedef struct {
 
 //to test when vga is enabled
 //------------------------
-void vbe_init_ctx(vbe_txt_ctx* ctx, i2* size);
+void vbe_init_ctx(vbe_txt_ctx* ctx, f2* size);
 void vbe_init_ctx_def(vbe_txt_ctx* ctx);
 void vbe_put_pxl(i2* pos, i3* col);
 void vbe_test_fill();

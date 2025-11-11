@@ -2,6 +2,17 @@
 #include "util.h"
 #include "pci.h"
 
+void vbe_put_hex16(ui16 n, vbe_txt_ctx* ctx) {
+    char str[8];
+    cnv_num_hex_str(n, 0x1000, str);
+    vbe_put_str(str, ctx);
+}
+void vbe_put_hex32(ui32 n, vbe_txt_ctx* ctx) {
+    char str[16];
+    cnv_num_hex_str(n, 0x10000000, str);
+    vbe_put_str(str, ctx);
+}
+
 void vbe_vga_display_info() {
     vga_print("--------------");
     vga_go_next_line();
@@ -52,28 +63,33 @@ void vbe_display_info(vbe_txt_ctx* ctx) {
 ui16 pci_dvc_display_info(vbe_txt_ctx* ctx) {
     ui16 bus, c, inf;
     ui8  dvc;
+    pci_dvc_data d;
     char buff[16];
     for (bus = 0; bus < 256; ++bus) {
     for (dvc = 0; dvc < 32;  ++dvc) {
         inf = pci_rd16(bus, dvc, 0, 0);
         if (inf == 0xFFFF) continue;
+        if (!pci_query_dvc_info(bus, dvc, &d)) {
+            vbe_put_str("Impossible error!  ", ctx);
+            continue;
+        }
         vbe_put_str("Port    :  ", ctx);
-        cnv_num_hex_str(bus, 0x1000, buff);
-        vbe_put_str(buff, ctx);
+        vbe_put_hex16(bus, ctx);
         vbe_go_next_line_rewind(ctx,0);
         vbe_put_str("Device  :  ", ctx);
-        cnv_num_hex_str(dvc, 0x1000, buff);
-        vbe_put_str(buff, ctx);
+        vbe_put_hex16(dvc, ctx);
         vbe_go_next_line_rewind(ctx,0);
         vbe_put_str("VendorID:  ", ctx);
-        cnv_num_hex_str(inf, 0x1000, buff);
-        vbe_put_str(buff, ctx);
+        vbe_put_hex16(d.vendor_id, ctx);
         vbe_go_next_line_rewind(ctx,0);
         vbe_put_str("DeviceID:  ", ctx);
-        cnv_num_hex_str(pci_rd16(bus, dvc, 0, 0x2), 0x1000, buff);
-        vbe_put_str(buff, ctx);
-        vbe_go_next_line(ctx);
+        vbe_put_hex16(d.dvc_id, ctx);
         vbe_go_next_line_rewind(ctx,0);
+        vbe_put_str("Class | Subclass: ", ctx);
+        vbe_put_hex16(d.cls, ctx);
+        vbe_put_str(" | ", ctx);
+        vbe_put_hex16(d.subcls,ctx);
+        vbe_go_next_line_rewind(ctx, 0);
         vbe_put_str("-----------------", ctx);
         vbe_go_next_line_rewind(ctx,0);
     }}

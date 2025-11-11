@@ -29,8 +29,9 @@ typedef struct {
 } f4;
 typedef unsigned char  uchar;
 typedef unsigned short ushort;
-typedef ui8 boolean;
-
+#ifndef __cplusplus
+typedef ui8 bool;
+#endif
 
 #define mmin(a,b) ((a)<(b)?(a):(b))
 #define mmax(a,b) ((a)>(b)?(a):(b))

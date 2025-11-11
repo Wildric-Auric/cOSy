@@ -19,8 +19,8 @@ void basic_text_editor() {
         ui16    sc   = kb_pop_scode();
         key_inf ki;
         kb_cnv_scode(sc, &ki);
-        boolean prs  = ki.event & key_event_enm_pressed;
-        boolean isan = is_alpha_num(ki.key);
+        bool prs  = ki.event & key_event_enm_pressed;
+        bool isan = is_alpha_num(ki.key);
         if (prs && isan) {
             ki.key = cnv_ascii_qwaz(ki.key);
             vga_print_char(ki.key);
@@ -53,9 +53,9 @@ void sand_gui() {
             ui16    sc   = kb_pop_scode();
             key_inf ki;
             kb_cnv_scode(sc, &ki);
-            boolean prs  = ki.event & key_event_enm_pressed;
-            boolean rls  = ki.event & key_event_enm_released;
-            boolean isan = is_alpha_num(ki.key);
+            bool prs  = ki.event & key_event_enm_pressed;
+            bool rls  = ki.event & key_event_enm_released;
+            bool isan = is_alpha_num(ki.key);
             vga_get_cur_pos2(&x,&y);
             if (prs && isan) {
                 ki.key = cnv_ascii_qwaz(ki.key);
@@ -134,7 +134,6 @@ void test_vga() {
     vga_update_gcur();  
     vga_print16(glob);
     vga_go_next_line();
-    //00003af0
     vga_go_next_line();
     const char* a = "Hey there";
     vga_print(a);
@@ -161,14 +160,14 @@ void test_vbe() {
     vbe_draw_line_vr(&li);
     ui8 tt = 0;
     vbe_txt_ctx ctx;
-    vbe_txt_ctx bct; bct.size.x = 4; bct.size.y = 4; 
+    vbe_txt_ctx bct; bct.size.x = 4.f; bct.size.y = 4.f; 
     ctx.size.x = 2;
     ctx.size.y = 2;
     vbe_init_ctx(&ctx, &ctx.size); ctx.gap.x = 0; ctx.gap.y = 0;
     vbe_init_ctx(&bct, &bct.size); bct.gap.x = 0; bct.gap.y = 0;
     bct.bcol.x = 0; bct.bcol.y = 0; bct.bcol.z = 255;
     bct.col.x  = 100.0; bct.col.y = 0; bct.col.z = 0; 
-    vbe_put_str("Be Right Back!", &bct);
+    vbe_put_str_check("Be Right Back!", &bct, &c);
     vbe_go_next_line(&bct); bct.cur.x = 0;
     ctx.cur = bct.cur;
     ctx.bcol.x = 0; ctx.bcol.y = 0; ctx.bcol.z = 0;
@@ -203,10 +202,10 @@ int main() {
     cnv_num_hex_str(pci_dvc_count(), 0x1000, buff);
     vbe_put_str(buff, &ctx);
     vbe_go_next_line_rewind(&ctx, 0);
-    ctx.size.x = 1;
-    ctx.size.y = 1;
-    //pci_dvc_display_info(&ctx);
-    memory_display(&ctx);
+    //test_vbe();
+    ctx.size.x = 1.3; ctx.size.y = 1.3;
+    //memory_display(&ctx);
+    pci_dvc_display_info(&ctx);
     while (1){};
     test_vbe();
     return 0;

@@ -1,5 +1,5 @@
 #include "video.h"
-#include "util.h"
+
 extern uchar p_in(ushort port);
 extern void  p_out(ushort port, uchar data);
 
@@ -299,7 +299,7 @@ void vbe_init_ctx_def(vbe_txt_ctx* ctx) {
     vbe_init_ctx(ctx, &ctx->size);
 }
 
-void vbe_init_ctx(vbe_txt_ctx* ctx, i2* size) {
+void vbe_init_ctx(vbe_txt_ctx* ctx, f2* size) {
     ctx->cur.x  = 0;
     ctx->cur.y  = 0;
     ctx->col.x  = 255;
@@ -331,9 +331,9 @@ void vbe_put_char(char c, vbe_txt_ctx* ctx) {
     i3* col;
     ui32 m = 1 << (sys_font_metrics.x-1);
     for (int l = 0; l < sys_font_metrics.y*ctx->size.y; ++l) {
-        lc = sys_font[c][l/ctx->size.y];
+        lc = sys_font[c][(int)(l/ctx->size.y)];
     for (int i = 0; i < sys_font_metrics.x*ctx->size.x; ++i) {
-        ui8 msk = m >> (i/ctx->size.x);
+        ui8 msk = m >> (int)(i/ctx->size.x);
         pos.y = ctx->cur.y + l;
         pos.x = ctx->cur.x + i;
         col   = (lc & msk) ? &ctx->col : &ctx->bcol;

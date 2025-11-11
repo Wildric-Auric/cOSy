@@ -2,23 +2,15 @@
 #include "util.h"
 #include "kb.h"
 #include "video.h"
-#include "port.h"
-
-volatile ui8 tick;
-void timer_isr_cbk(isr_hdl_args arg) {
-    ++tick;
-    //vga_clear();
-    //vga_print32(tick);
-}
-void drv_init_timer(ui32 frq) {
-    bind_int_hdl(32, timer_isr_cbk);
-    ui32 d = 1193180 / frq;
-    p_out(0x43, 0x36);
-    p_out(0x40, d & 0xFF);
-    p_out(0x40, (d>>8) & 0xFF);
-}
+#include "pci.h"
 
 
+extern ui8  sys_font[128][16];
+extern ui16 pci_dvc_display_info(vbe_txt_ctx* ctx);
+extern void vbe_display_info(vbe_txt_ctx* ctx);
+extern void memory_display(vbe_txt_ctx* ctx);
+extern void init_sys_font();
+extern void drv_init_timer(ui32 frq);
 
 //--------------Sample programs-----------------
 void basic_text_editor() {
@@ -127,7 +119,6 @@ void sand_gui() {
 }
 //-------------------------------
 
-const char* a = "Hey there";
 ui16 glob = 42;
 void test_vga() {
     vga_put('X', 0, 0);
@@ -145,6 +136,7 @@ void test_vga() {
     vga_go_next_line();
     //00003af0
     vga_go_next_line();
+    const char* a = "Hey there";
     vga_print(a);
     //vga_print(a);
 }
@@ -157,31 +149,16 @@ void print_line() {
     vga_go_next_line();
 }
 
-extern ui8 sys_font[128][16];
-
-
-
-extern void init_sys_font();
-int main() {
-    drv_init_vga();
-    vga_clear();
-    set_idt();
-    asm __volatile__("sti");
-    drv_init_timer(100);
-    drv_init_kb(); 
-    init_sys_font();
-    //vbe_put_char('c',&ctx);
+void test_vbe() {
     vbe_mode_info* mi = vbe_get_mode_info();
     vbe_txt_cnst  c;
     c.end_loc       = 500;
     c.next_line_pos = 0;
-
     vbe_line_info li;
     li.level = c.end_loc;
     li.width = 1;
     li.col.x = 100; li.col.y = 100; li.col.z = 150;
     vbe_draw_line_vr(&li);
-
     ui8 tt = 0;
     vbe_txt_ctx ctx;
     vbe_txt_ctx bct; bct.size.x = 4; bct.size.y = 4; 
@@ -198,7 +175,6 @@ int main() {
     ctx.col.x = 0; ctx.col.z = 0;
     vbe_display_info(&ctx);
     //vbe_put_str_check("Wake up neo,the matrix has you", &ctx, &c);
-
     while (1) {
         bct.col.x  = tt*10.0; bct.col.y = 0; bct.col.z = 0; 
         bct.cur.x  = 0;
@@ -209,7 +185,29 @@ int main() {
         vbe_display_info(&ctx);
         tt++;
     }
+}
 
+int main() {
+    drv_init_vga();
+    vga_clear();
+    set_idt();
+    asm __volatile__("sti");
+    drv_init_timer(100);
+    drv_init_kb(); 
+    init_sys_font();
+    vbe_txt_ctx ctx;
+    vbe_init_ctx_def(&ctx);
+    ctx.col.x = 0; ctx.col.z = 0;
+    vbe_put_str("PCI Device count: ", &ctx);
+    char buff[8];
+    cnv_num_hex_str(pci_dvc_count(), 0x1000, buff);
+    vbe_put_str(buff, &ctx);
+    vbe_go_next_line_rewind(&ctx, 0);
+    ctx.size.x = 1;
+    ctx.size.y = 1;
+    //pci_dvc_display_info(&ctx);
+    memory_display(&ctx);
     while (1){};
+    test_vbe();
     return 0;
 }

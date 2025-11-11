@@ -160,30 +160,6 @@ void drv_init_vga() {
 
 //----------------
 
-void vbe_vga_display_info() {
-    vga_print("--------------");
-    vga_go_next_line();
-    vbe_mode_info* inf = (vbe_mode_info*)(VBE_MODE_INFO);
-    #define pr(s,n,d) \
-    vga_print(s); \
-    print_hex(n, d); \
-    vga_go_next_line();
-    pr("width     : " , inf->width         ,0x1<<12);
-    pr("height    : " , inf->height        ,0x1<<12);
-    pr("bpp       : " , inf->bpp           ,0x1<<4)
-    pr("memm      : " , inf->memory_model  ,0x1<<4);
-    pr("fmb       : " , inf->framebuffer   ,0x1<<28);
-    pr("redp      : " , inf->red_position  ,0x1<<4);
-    pr("bluep     : " , inf->blue_position ,0x1<<4);
-    pr("greenp    : " , inf->green_position,0x1<<4);
-    pr("redmsk    : " , inf->red_mask      ,0x1<<4);
-    pr("bluemsk   : " , inf->blue_mask     ,0x1<<4);
-    pr("greenmsk  : ", inf->green_mask     ,0x1<<4);
-    #undef pr
-    vga_print("--------------");
-    vga_go_next_line();
-}
-
 void vbe_put_pxl(i2* pos, i3* col) {
     vbe_mode_info* inf = (vbe_mode_info*)(VBE_MODE_INFO);
     ui8* fmb = (ui8*)inf->framebuffer;
@@ -343,27 +319,9 @@ void vbe_go_next_line(vbe_txt_ctx* ctx) {
                  + ctx->gap.y);
 }
 
-void vbe_display_info(vbe_txt_ctx* ctx) {
-    char num[33];
-    vbe_mode_info* inf = (vbe_mode_info*)(VBE_MODE_INFO);
-    #define pr(s,n,d)           \
-    vbe_put_str(s, ctx);       \
-    cnv_num_hex_str(n, d, num); \
-    vbe_put_str(num, ctx);     \
-    vbe_go_next_line(ctx);     \
-    ctx->cur.x = 0; 
-    pr("width     : " , inf->width         ,0x1<<12);
-    pr("height    : " , inf->height        ,0x1<<12);
-    pr("bpp       : " , inf->bpp           ,0x1<<4)
-    pr("memm      : " , inf->memory_model  ,0x1<<4);
-    pr("fmb       : " , inf->framebuffer   ,0x1<<28);
-    pr("redp      : " , inf->red_position  ,0x1<<4);
-    pr("bluep     : " , inf->blue_position ,0x1<<4);
-    pr("greenp    : " , inf->green_position,0x1<<4);
-    pr("redmsk    : " , inf->red_mask      ,0x1<<4);
-    pr("bluemsk   : " , inf->blue_mask     ,0x1<<4);
-    pr("greenmsk  : ", inf->green_mask     ,0x1<<4);
-    #undef pr
+void vbe_go_next_line_rewind(vbe_txt_ctx* ctx, int rewind_pos) {
+    vbe_go_next_line(ctx);
+    ctx->cur.x = rewind_pos;
 }
 
 void vbe_put_char(char c, vbe_txt_ctx* ctx) {

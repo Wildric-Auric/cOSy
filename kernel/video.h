@@ -123,9 +123,7 @@ typedef struct {
 } vbe_line_info;
 
 //to test when vga is enabled
-void vbe_vga_display_info();
 //------------------------
-void vbe_display_info(vbe_txt_ctx* ctx);
 void vbe_init_ctx(vbe_txt_ctx* ctx, i2* size);
 void vbe_init_ctx_def(vbe_txt_ctx* ctx);
 void vbe_put_pxl(i2* pos, i3* col);
@@ -140,5 +138,6 @@ void vbe_draw_line_vr_ft(vbe_line_info*);
 void vbe_draw_line_hz(vbe_line_info*);
 void vbe_draw_line_vr(vbe_line_info*);
 void vbe_go_next_line(vbe_txt_ctx*);
+void vbe_go_next_line_rewind(vbe_txt_ctx*, int);
 vbe_mode_info* vbe_get_mode_info(); 
 #endif

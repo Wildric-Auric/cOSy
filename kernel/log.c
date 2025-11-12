@@ -90,6 +90,9 @@ ui16 pci_dvc_display_info(vbe_txt_ctx* ctx) {
         vbe_put_str(" | ", ctx);
         vbe_put_hex16(d.subcls,ctx);
         vbe_go_next_line_rewind(ctx, 0);
+        vbe_put_str("Header Type", ctx);
+        vbe_put_hex16(d.hdr_type,ctx);
+        vbe_go_next_line_rewind(ctx, 0);
         vbe_put_str("-----------------", ctx);
         vbe_go_next_line_rewind(ctx,0);
     }}

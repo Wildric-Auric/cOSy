@@ -20,8 +20,8 @@ ui16 pci_rd16(ui8 bus, ui8 dvc, ui8 func, ui8 reg_off) {
 
 ui32 pci_rd32(ui8 bus, ui8 dvc, ui8 func, ui8 reg_off) {
     ui32 res;
-    return ((ui32)(pci_rd16(bus,dvc,func,reg_off)) << 16) 
-         | ((ui32)(pci_rd16(bus,dvc,func,reg_off + 0x2)));
+    return ((ui32)(pci_rd16(bus,dvc,func,reg_off))) 
+         | ((ui32)(pci_rd16(bus,dvc,func,reg_off + 0x2)) << 16);
 }
 
 bool pci_dvc_find_next_class(pci_dvc_loc_info* info) {

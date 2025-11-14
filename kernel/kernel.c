@@ -3,6 +3,7 @@
 #include "kb.h"
 #include "video.h"
 #include "pci.h"
+#include "ide.h"
 
 
 extern ui8  sys_font[128][16];
@@ -186,6 +187,60 @@ void test_vbe() {
     }
 }
 
+extern void vbe_put_hex16(ui16 n, vbe_txt_ctx* ctx);
+extern void vbe_put_hex32(ui32 n, vbe_txt_ctx* ctx);
+void test_ide() {
+    vbe_txt_ctx ctx;
+    vbe_init_ctx_def(&ctx);
+    ctx.col.x = 0; ctx.col.z = 0;
+    vbe_put_str("Testing ide...", &ctx);
+    vbe_go_next_line_rewind(&ctx, 0);    
+    
+    pci_dvc_loc_info pci_i;
+    pci_i.dvc         = 0;
+    pci_i.bus         = 0;
+    pci_i.data.cls    = 1;
+    pci_i.data.subcls = 1;
+
+    ide_buses buses;
+    bool b;
+    b = pci_dvc_find_next_class(&pci_i);
+    if (!b) {
+        vbe_put_str("Didn't find IDE controller in PCI.", &ctx);
+        vbe_go_next_line_rewind(&ctx, 0); 
+        ide_init_legacy(&buses);
+    }
+    else {
+        b = ide_init_pci(&pci_i, &buses);
+        if (!b) {
+            vbe_put_str("IDE PCI initialization failed.", &ctx);
+            vbe_go_next_line_rewind(&ctx, 0);
+            ide_init_legacy(&buses);
+        }
+    }
+        
+
+    vbe_put_str("prog_if: ", &ctx);
+    vbe_put_hex32(pci_i.data.prog_if, &ctx);
+    vbe_go_next_line_rewind(&ctx, 0);
+
+    vbe_put_str("Bases: ", &ctx);
+    vbe_put_hex32(buses.primary.base_io,   &ctx); vbe_put_str(" | ",   &ctx);
+    vbe_put_hex32(buses.primary.base_ctrl, &ctx); vbe_put_str(" | ",   &ctx);
+    vbe_put_hex32(buses.secondary.base_io,   &ctx); vbe_put_str(" | ", &ctx);
+    vbe_put_hex32(buses.secondary.base_ctrl, &ctx);
+    vbe_go_next_line_rewind(&ctx, 0);
+
+
+    ide_dvcs dvcs;
+    ide_init_dvcs(&dvcs, &buses);
+    for (int i = 0; i < 4; ++i) {
+        vbe_put_str("DeivceType : ", &ctx);
+        vbe_put_hex16(dvcs.lst[i].type, &ctx);
+        vbe_go_next_line_rewind(&ctx, 0);
+    }
+}
+
 int main() {
     drv_init_vga();
     vga_clear();
@@ -197,16 +252,15 @@ int main() {
     vbe_txt_ctx ctx;
     vbe_init_ctx_def(&ctx);
     ctx.col.x = 0; ctx.col.z = 0;
-    vbe_put_str("PCI Device count: ", &ctx);
+    //vbe_put_str("PCI Device count: ", &ctx);
     char buff[8];
     cnv_num_hex_str(pci_dvc_count(), 0x1000, buff);
     vbe_put_str(buff, &ctx);
     vbe_go_next_line_rewind(&ctx, 0);
-    //test_vbe();
+    test_ide();
     ctx.size.x = 1.3; ctx.size.y = 1.3;
+    //pci_dvc_display_info(&ctx);
     //memory_display(&ctx);
-    pci_dvc_display_info(&ctx);
     while (1){};
-    test_vbe();
     return 0;
 }

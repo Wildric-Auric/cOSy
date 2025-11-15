@@ -231,12 +231,18 @@ void test_ide() {
     vbe_put_hex32(buses.secondary.base_ctrl, &ctx);
     vbe_go_next_line_rewind(&ctx, 0);
 
-
     ide_dvcs dvcs;
     ide_init_dvcs(&dvcs, &buses);
     for (int i = 0; i < 4; ++i) {
         vbe_put_str("DeivceType : ", &ctx);
         vbe_put_hex16(dvcs.lst[i].type, &ctx);
+        vbe_go_next_line_rewind(&ctx, 0);
+        if (dvcs.lst[i].type != ide_dvc_type_none)
+            vbe_put_str(dvcs.lst[i].name, &ctx);
+        else 
+            vbe_put_str("NONE", &ctx);
+        vbe_go_next_line_rewind(&ctx, 0);
+        vbe_put_str("-----------", &ctx);
         vbe_go_next_line_rewind(&ctx, 0);
     }
 }

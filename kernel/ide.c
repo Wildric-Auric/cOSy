@@ -2,6 +2,8 @@
 #include "pci.h"
 #include "port.h"
 
+//offset in bytes
+#define ATA_IDENTIFY_MODEL_OFFSET 54
 
 void ide_init(ide_base_addrs* arg, ide_buses* buses) {
     buses->primary.idx         = 0;
@@ -112,13 +114,17 @@ ui8 ide_polling(ide_bus* bus) {
 //      7	1	Always set.
 
 ui8 ide_init_dvc(ide_dvc* dvc, ide_bus* bus,ui8 drive) {
-    dvc->bus   = bus;
-    dvc->drive = drive;
-    dvc->type  = 0;
+    ui16 buff[256];
+    ui16 wrd;
+    ui8  status;
+    dvc->bus     = bus;
+    dvc->drive   = drive;
+    dvc->type    = 0;
+    //dvc->name[0] = 0;
     //0b10110000 -> selects drive 1 of bus  in CHS
     ide_wrt_data(bus, ata_data_reg_head_reg_rw, 0xA0 | (dvc->drive << 4));
     ide_wait400ns(bus);
-    ui8 status = ide_rd_data(bus, ata_data_reg_status_ro);
+    status = ide_rd_data(bus, ata_data_reg_status_ro);
     if (!status || status == 0xFF) return 0;
 
     ide_wrt_data(bus, ata_data_reg_sec_count_rw,0);
@@ -127,12 +133,14 @@ ui8 ide_init_dvc(ide_dvc* dvc, ide_bus* bus,ui8 drive) {
     ide_wrt_data(bus, ata_data_reg_cyldr_high_rw,0);
     ide_wrt_data(bus, ata_data_reg_cmd_wo, 0xEC);
  
+    ide_wait400ns(bus);
     status = ide_rd_data(bus, ata_data_reg_status_ro);
     if (!status || status == 0xFF) 
         return 0;
     ui32 hcyl; 
     ui32 lcyl;
 
+    //ide_wait400ns(bus);
     while ((status = ide_rd_data(bus, ata_data_reg_status_ro)) & ata_status_reg_bsy) {}    
     //if (ide_polling(bus)) return 0;
     hcyl = ide_rd_data(bus, ata_data_reg_cyldr_high_rw);
@@ -152,6 +160,16 @@ ui8 ide_init_dvc(ide_dvc* dvc, ide_bus* bus,ui8 drive) {
     if (lcyl == 0x69 && hcyl == 0x96) dvc->type = ide_dvc_type_satapi;
     if (lcyl == 0x00 && hcyl == 0x00) dvc->type = ide_dvc_type_pata;
     if (lcyl == 0x3C && hcyl == 0xC3) dvc->type = ide_dvc_type_sata;
+
+    for (int i = 0; i < 256; ++i) {
+        buff[i] = p_in16(bus->base_io);
+    }
+    for (int i = 0; i < 40; i += 2) {
+        wrd = buff[ATA_IDENTIFY_MODEL_OFFSET/2 + i/2];
+        dvc->name[i]   = (wrd >> 8) & 0xFF;
+        dvc->name[i+1] = wrd & 0xFF;
+    }
+    dvc->name[40] = 0;
 
     return 1;
 };

@@ -38,3 +38,8 @@ int str_len(const char* str) {
     return i;
 }
 
+void cnv_lba_to_chs(ui32 lba, ui32 secPerCyl, ui32* cyl, ui32* head, ui32* sec) {
+    *head = (lba % (secPerCyl * 2)) / secPerCyl;
+    *cyl  = (lba / (secPerCyl * 2));
+    *sec  = (lba % secPerCyl  + 1);
+}

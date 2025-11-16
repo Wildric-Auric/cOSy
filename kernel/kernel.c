@@ -233,6 +233,7 @@ void test_ide() {
 
     ide_dvcs dvcs;
     ide_init_dvcs(&dvcs, &buses);
+    ui8 buff[512];
     for (int i = 0; i < 4; ++i) {
         vbe_put_str("DeivceType : ", &ctx);
         vbe_put_hex16(dvcs.lst[i].type, &ctx);
@@ -242,9 +243,31 @@ void test_ide() {
         else 
             vbe_put_str("NONE", &ctx);
         vbe_go_next_line_rewind(&ctx, 0);
+        vbe_put_str("Size: ", &ctx);
+        vbe_put_hex32(dvcs.lst[i].size, &ctx);
+        vbe_go_next_line_rewind(&ctx, 0);
+        vbe_put_str("Uses LBA48: ", &ctx);
+        vbe_put_hex16((bool)((dvcs.lst[i].cmds>>ATA_IDENTIFY_CAPABILITIES_BIG_LBA_BIT) & 0x1), &ctx);
+        vbe_go_next_line_rewind(&ctx, 0);
+        vbe_put_str("Supports LBA: ", &ctx);
+        vbe_put_hex16((bool)((dvcs.lst[i].cap>>9) & 0x1), &ctx);
+        vbe_go_next_line_rewind(&ctx, 0);
         vbe_put_str("-----------", &ctx);
         vbe_go_next_line_rewind(&ctx, 0);
     }
+    vbe_go_next_line_rewind(&ctx, 0);
+    ide_disable_irq(&buses.primary);
+    ide_rd_disk(dvcs.lst, 0, 1, (ui16*)buff);
+    buff[0] = 'W'; buff[1] = 'l'; buff[2] = 'd';
+    buff[3] = 'r'; buff[4] = 'c';
+    ide_wrt_disk(dvcs.lst, 0, 1, (ui16*)buff);
+    ui8 aa = ide_rd_disk(dvcs.lst, 0, 1, (ui16*)buff); 
+    vbe_put_hex16(aa, &ctx);
+    vbe_go_next_line_rewind(&ctx, 0);
+    vbe_put_str("Testing ReadWrite: ", &ctx);
+    vbe_go_next_line_rewind(&ctx, 0);
+    vbe_put_str((const char*)buff, &ctx);
+    vbe_go_next_line_rewind(&ctx, 0);
 }
 
 int main() {

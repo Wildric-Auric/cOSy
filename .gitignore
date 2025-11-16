@@ -3,6 +3,7 @@
 *.o
 *.ini
 *.elf
+.clangd
 build/
 bochs*
 doc/

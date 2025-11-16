@@ -1,6 +1,7 @@
 # cOSy
 
 Yet another hobby os
+Work In Progress...
 
 # Roadmap 
 
@@ -9,6 +10,8 @@ Yet another hobby os
 - [x] 32-Bit Protected mode
 - [x] IDT
 - [x] PS/2 Keyboard driver
-- [ ]  Memory detection
-- [ ]  ATA PIO driver
-
+- [x] Memory detection
+- [x] ATA PIO driver
+- [ ] Paging
+- [ ] Multithreading/Scheduler 
+- [ ] Use space 

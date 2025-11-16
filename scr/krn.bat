@@ -16,7 +16,5 @@ wsl -e bash -ic ^
 wsl -e bash -ic ^
 "i686-elf-objcopy -O binary build/kernel.elf build/kernel.bin"
 
-rem wsl -e bash -ic ^
-rem "i686-elf-ld  -Ttext 0x100000 build/entry/kernel_entry.o build/*.o --oformat binary -o build/kernel.bin"
 
 popd

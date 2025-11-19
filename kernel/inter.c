@@ -93,6 +93,7 @@ void isr_hdl(isr_hdl_args arg) {
     char num[8];
     vbe_txt_ctx ctx;
     vbe_init_ctx_def(&ctx);
+    ctx.size.x = 3.5; ctx.size.y = 3.5;
     vbe_put_str("Interrupt reveived: ", &ctx);
     cnv_num_hex_str(arg.num, 0x1000, num);
     vbe_put_str(num, &ctx);

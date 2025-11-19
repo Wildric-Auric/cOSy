@@ -140,4 +140,5 @@ void vbe_draw_line_vr(vbe_line_info*);
 void vbe_go_next_line(vbe_txt_ctx*);
 void vbe_go_next_line_rewind(vbe_txt_ctx*, int);
 vbe_mode_info* vbe_get_mode_info(); 
+ui32           vbe_get_fmbuff_size();
 #endif

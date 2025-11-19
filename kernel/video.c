@@ -415,3 +415,8 @@ void vbe_draw_line_vr(vbe_line_info* inf) {
 vbe_mode_info* vbe_get_mode_info() {
     return (vbe_mode_info*)(VBE_MODE_INFO);
 }
+
+ui32 vbe_get_fmbuff_size() {
+    vbe_mode_info* inf = (vbe_mode_info*)(VBE_MODE_INFO);
+    return inf->pitch * inf->height;
+}

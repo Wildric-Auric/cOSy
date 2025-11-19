@@ -558,7 +558,7 @@ init_pm:
     mov fs, ax
     mov gs, ax
     ; mov ebp, 0x7C00 ; stack must be divisible by 16
-    mov ebp, 0x00F00000
+    mov ebp, 0xF00000
     mov esp, ebp
     mov ebx, pm_str + 0x7E00
     ; call wrt_str32

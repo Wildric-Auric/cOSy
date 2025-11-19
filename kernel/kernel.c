@@ -4,6 +4,7 @@
 #include "video.h"
 #include "pci.h"
 #include "ide.h"
+#include "memory.h"
 
 
 extern ui8  sys_font[128][16];
@@ -270,6 +271,20 @@ void test_ide() {
     vbe_go_next_line_rewind(&ctx, 0);
 }
 
+void test_pg(vbe_txt_ctx* ctx) {
+    pg_init(); 
+    ui32* addr;
+    addr  = (ui32*)0x100000;
+    addr  = (ui32*)0xFFFFFC;   //should not fault
+    //addr  = (ui32*)0xFFFFFD;   //should fault, 0xE
+    ui32  bckup = *addr; 
+    *addr = 100;
+    *addr = bckup;
+    vbe_put_str("Paging Tested", ctx);
+    vbe_go_next_line_rewind(ctx, 0);
+    while (1) {}
+}
+
 int main() {
     drv_init_vga();
     vga_clear();
@@ -281,12 +296,13 @@ int main() {
     vbe_txt_ctx ctx;
     vbe_init_ctx_def(&ctx);
     ctx.col.x = 0; ctx.col.z = 0;
-    //vbe_put_str("PCI Device count: ", &ctx);
+    vbe_put_str("PCI Device count: ", &ctx);
     char buff[8];
     cnv_num_hex_str(pci_dvc_count(), 0x1000, buff);
     vbe_put_str(buff, &ctx);
     vbe_go_next_line_rewind(&ctx, 0);
-    test_ide();
+    //test_ide();
+    test_pg(&ctx);
     ctx.size.x = 1.3; ctx.size.y = 1.3;
     //pci_dvc_display_info(&ctx);
     //memory_display(&ctx);

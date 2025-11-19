@@ -12,6 +12,5 @@ Work In Progress...
 - [x] PS/2 Keyboard driver
 - [x] Memory detection
 - [x] ATA PIO driver
-- [ ] Paging
+- [x] Paging
 - [ ] Multithreading/Scheduler 
-- [ ] Use space 

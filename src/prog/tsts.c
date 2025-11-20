@@ -1,4 +1,3 @@
-#include "inter.h"
 #include "util.h"
 #include "kb.h"
 #include "video.h"
@@ -11,7 +10,6 @@ extern ui8  sys_font[128][16];
 extern ui16 pci_dvc_display_info(vbe_txt_ctx* ctx);
 extern void vbe_display_info(vbe_txt_ctx* ctx);
 extern void memory_display(vbe_txt_ctx* ctx);
-extern void init_sys_font();
 extern void drv_init_timer(ui32 frq);
 
 //--------------Sample programs-----------------
@@ -39,6 +37,29 @@ void basic_text_editor() {
     }
     }
 }
+
+void test_kb() {
+    vbe_txt_ctx ctx;
+    int l = 0;
+    vbe_init_ctx_def(&ctx);
+    while(1) {
+    while (kb_get_stack_ptr()) {
+        ui16 sc = kb_pop_scode(); 
+        key_inf ki;
+        kb_cnv_scode(sc, &ki);
+        vbe_put_hex32(ki.key, &ctx);
+        vbe_put_str("  ", &ctx);
+        vbe_put_hex32(ki.event, &ctx);
+        vbe_go_next_line_rewind(&ctx,0); 
+        l++;
+        if (l != 10) 
+            continue;
+        l = 0;
+        vbe_clear(&ctx);
+    }
+    }
+}
+
 //-------------------------------
 #define particle_num 48 
 #define ptimer 100
@@ -188,8 +209,6 @@ void test_vbe() {
     }
 }
 
-extern void vbe_put_hex16(ui16 n, vbe_txt_ctx* ctx);
-extern void vbe_put_hex32(ui32 n, vbe_txt_ctx* ctx);
 void test_ide() {
     vbe_txt_ctx ctx;
     vbe_init_ctx_def(&ctx);
@@ -283,29 +302,4 @@ void test_pg(vbe_txt_ctx* ctx) {
     vbe_put_str("Paging Tested", ctx);
     vbe_go_next_line_rewind(ctx, 0);
     while (1) {}
-}
-
-int main() {
-    drv_init_vga();
-    vga_clear();
-    set_idt();
-    asm __volatile__("sti");
-    drv_init_timer(100);
-    drv_init_kb(); 
-    init_sys_font();
-    vbe_txt_ctx ctx;
-    vbe_init_ctx_def(&ctx);
-    ctx.col.x = 0; ctx.col.z = 0;
-    vbe_put_str("PCI Device count: ", &ctx);
-    char buff[8];
-    cnv_num_hex_str(pci_dvc_count(), 0x1000, buff);
-    vbe_put_str(buff, &ctx);
-    vbe_go_next_line_rewind(&ctx, 0);
-    //test_ide();
-    test_pg(&ctx);
-    ctx.size.x = 1.3; ctx.size.y = 1.3;
-    //pci_dvc_display_info(&ctx);
-    //memory_display(&ctx);
-    while (1){};
-    return 0;
 }

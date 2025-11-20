@@ -36,5 +36,7 @@ typedef ui8 bool;
 #define mmin(a,b) ((a)<(b)?(a):(b))
 #define mmax(a,b) ((a)>(b)?(a):(b))
 #define clamp(a,mi,ma) (mmax(mmin(a,ma),mi))
+#define make_vec3(v,xx,yy,zz) v.x = (xx); v.y = (yy); v.z = (zz);
+#define make_vec2(v,xx,yy) v.x = (xx); v.y = (yy);
 
 #endif

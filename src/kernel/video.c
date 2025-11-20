@@ -1,4 +1,5 @@
 #include "video.h"
+#include "util.h"
 
 extern uchar p_in(ushort port);
 extern void  p_out(ushort port, uchar data);
@@ -319,6 +320,10 @@ void vbe_go_next_line(vbe_txt_ctx* ctx) {
                  + ctx->gap.y);
 }
 
+void vbe_go_endl(vbe_txt_ctx* ctx) {
+    ctx->cur.y = ((vbe_get_mode_info()->width - 1) * (sys_font_metrics.x + ctx->gap.x));
+}
+
 void vbe_go_next_line_rewind(vbe_txt_ctx* ctx, int rewind_pos) {
     vbe_go_next_line(ctx);
     ctx->cur.x = rewind_pos;
@@ -349,6 +354,17 @@ void vbe_put_str(const char* str, vbe_txt_ctx* ctx) {
     while (c = str[i++]) {
         vbe_put_char(c, ctx);
     }
+}
+
+void vbe_put_hex16(ui16 n, vbe_txt_ctx* ctx) {
+    char str[8];
+    cnv_num_hex_str(n, 0x1000, str);
+    vbe_put_str(str, ctx);
+}
+void vbe_put_hex32(ui32 n, vbe_txt_ctx* ctx) {
+    char str[16];
+    cnv_num_hex_str(n, 0x10000000, str);
+    vbe_put_str(str, ctx);
 }
 
 int vbe_put_str_to(const char* str,int n, vbe_txt_ctx* ctx) {
@@ -419,4 +435,62 @@ vbe_mode_info* vbe_get_mode_info() {
 ui32 vbe_get_fmbuff_size() {
     vbe_mode_info* inf = (vbe_mode_info*)(VBE_MODE_INFO);
     return inf->pitch * inf->height;
+}
+
+
+void vbe_fill_till_cur(vbe_txt_ctx* ctx, i3* col) {
+    i2 pos;    
+    vbe_mode_info* inf = vbe_get_mode_info();
+    for (pos.x = 0; pos.x < inf->pitch; ++pos.x) {
+    for (pos.y = 0; pos.y < ctx->cur.y; ++pos.y) {
+        vbe_put_pxl(&pos,col);
+    }}
+}
+
+void vbe_clear(vbe_txt_ctx* ctx) {
+    vbe_fill_till_cur(ctx, &ctx->bcol);
+    ctx->cur.x = 0;
+    ctx->cur.y = 0;
+}
+
+ui32 vbe_get_char_metrics_x(vbe_txt_ctx* ctx) {
+    return (sys_font_metrics.x * ctx->size.x) + ctx->gap.x;
+}
+
+ui32 vbe_get_char_metrics_y(vbe_txt_ctx* ctx) {
+    return (sys_font_metrics.y * ctx->size.y) + ctx->gap.y;
+}
+ 
+void vbe_go_last_char(vbe_txt_ctx* ctx) {
+    i2 p;
+    p   = ctx->cur; 
+    p.x = ctx->cur.x - vbe_get_char_metrics_x(ctx);
+    if (p.x < 0) {
+        p.y = ctx->cur.y - vbe_get_char_metrics_y(ctx); 
+        if (p.y < 0) {
+            p.y = 0;
+            p.x = 0;
+        }
+        else
+            vbe_go_endl(ctx);
+    }
+    ctx->cur = p;
+}
+
+void vbe_go_next_char(vbe_txt_ctx* ctx) {
+    ctx->cur.x += vbe_get_char_metrics_x(ctx);
+}
+
+void vbe_clear_char(vbe_txt_ctx* ctx) {
+    vbe_go_last_char(ctx);
+    vbe_put_char(' ', ctx);
+    ctx->cur.x -= vbe_get_char_metrics_x(ctx); 
+}
+
+void vbe_render_gcur(vbe_txt_ctx* ctx) {
+    i3 bg = ctx->bcol;
+    ctx->bcol = ctx->col;
+    vbe_put_char(' ', ctx);
+    ctx->cur.x -= vbe_get_char_metrics_x(ctx); 
+    ctx->bcol = bg;
 }

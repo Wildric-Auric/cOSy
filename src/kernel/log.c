@@ -2,17 +2,6 @@
 #include "util.h"
 #include "pci.h"
 
-void vbe_put_hex16(ui16 n, vbe_txt_ctx* ctx) {
-    char str[8];
-    cnv_num_hex_str(n, 0x1000, str);
-    vbe_put_str(str, ctx);
-}
-void vbe_put_hex32(ui32 n, vbe_txt_ctx* ctx) {
-    char str[16];
-    cnv_num_hex_str(n, 0x10000000, str);
-    vbe_put_str(str, ctx);
-}
-
 void vbe_vga_display_info() {
     vga_print("--------------");
     vga_go_next_line();

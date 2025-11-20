@@ -133,12 +133,25 @@ void vbe_put_char(char c, vbe_txt_ctx*);
 void vbe_put_str(const char*, vbe_txt_ctx*);
 int  vbe_put_str_to(const char* str,int n, vbe_txt_ctx* ctx);
 void vbe_put_str_check(const char*, vbe_txt_ctx*, vbe_txt_cnst*);
+void vbe_put_hex16(ui16 n, vbe_txt_ctx* ctx);
+void vbe_put_hex32(ui32 n, vbe_txt_ctx* ctx);
 void vbe_draw_line_hz_ft(vbe_line_info*);
 void vbe_draw_line_vr_ft(vbe_line_info*);
 void vbe_draw_line_hz(vbe_line_info*);
 void vbe_draw_line_vr(vbe_line_info*);
 void vbe_go_next_line(vbe_txt_ctx*);
 void vbe_go_next_line_rewind(vbe_txt_ctx*, int);
+void vbe_fill_till_cur(vbe_txt_ctx*, i3* col);
+void vbe_clear(vbe_txt_ctx*);
+void vbe_clear_char(vbe_txt_ctx* ctx);
+void vbe_render_gcur(vbe_txt_ctx* ctx);
+void vbe_go_last_char(vbe_txt_ctx* ctx);
+
 vbe_mode_info* vbe_get_mode_info(); 
 ui32           vbe_get_fmbuff_size();
+
+//font related utilities
+
+extern void init_sys_font();
+extern ui8  sys_font[128][16];
 #endif

@@ -10,6 +10,14 @@ char cnv_ascii_qwaz(char c) {
     }
 }
 
+bool is_alpha(char c) {
+    return c >= 'a' && c <= 'z';
+}
+
+bool is_num(char c) {
+    return c >= '0' && c <= '9';
+}
+
 bool is_alpha_num(char c) {
     return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
 }
@@ -42,4 +50,17 @@ void cnv_lba_to_chs(ui32 lba, ui32 secPerCyl, ui32* cyl, ui32* head, ui32* sec) 
     *head = (lba % (secPerCyl * 2)) / secPerCyl;
     *cyl  = (lba / (secPerCyl * 2));
     *sec  = (lba % secPerCyl  + 1);
+}
+
+bool str_eq(const char* a, const char* b) {
+    int  c  = 0;
+    int  d  = 0;
+    char la = 0;
+    char lb = 0;
+    while ((la=a[c]) != 0 && (lb=b[d]) != 0) {
+        if (la != lb) return 0;
+        d++;
+        c++;
+    }
+    return a[c] == b[d];
 }

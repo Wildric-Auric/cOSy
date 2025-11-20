@@ -307,7 +307,7 @@ init_stage2:
     mov ax, 0xFFFF 
     mov es, ax 
     mov bx, 0x10
-    mov al, 64 
+    mov al, 72 
     mov cl, 5
     call ldsk
     ; get free memory map

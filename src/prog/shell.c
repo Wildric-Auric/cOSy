@@ -91,9 +91,11 @@ void shell_exec(vbe_txt_ctx* ctx) {
 void term() {
     vbe_txt_ctx ctx;
     bool shft_mode = 0;
-    vbe_init_ctx_def(&ctx);
-    ctx.size.x = 2;
-    ctx.size.y = 2;
+    f2   s;
+    make_vec2(s, 2.0, 2.0);
+    vbe_init_ctx(&ctx,&s);
+    vbe_render_gcur(&ctx);
+    vbe_go_last_char(&ctx);
     cmdb[0] = 0;
     cmdp    = 0;
     while (1) {

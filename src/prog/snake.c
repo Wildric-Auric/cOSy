@@ -31,7 +31,7 @@ void snake() {
     bool    quit = 0;
     int     idx  = 0;
     int     head_dir;
-    int     tmr  = 10e6;
+    int     tmr  = 10e5;
     int     tick = tmr;
     make_vec3(scol, 255, 0, 0);
     bg.x  = 80; bg.y = 0; bg.z = 50;
@@ -44,7 +44,7 @@ void snake() {
             vbe_put_pxl(&pos,&bg);
     }}
 
-    len = 2;
+    len = 5;
     for (int i = 0; i < len; i++) {
         snake_body[i].dir   = 1;
         snake_body[i].pos_x = 5 - i;
@@ -86,6 +86,16 @@ void snake() {
             snake_render_part(cur->pos_x,cur->pos_y,&scol);
         }
         snake_render_part(lpos.x, lpos.y, &bg1);
+
+
+        ui8 l = snake_body[0].dir;
+        ui8 n;
+        for (int i = 0; i < len; ++i ) {
+            n = l;
+            l = snake_body[i].dir;
+            snake_body[i].dir = n;
+        }
+
         head_dir = snake_body[0].dir;
         if (tmp_dir == 0 || tmp_dir == head_dir) 
             continue;
@@ -97,9 +107,6 @@ void snake() {
             continue;
         if (tmp_dir == 0x8 && head_dir == 0x4) 
             continue;
-        for (int i = 1; i < len; ++i ) {
-            snake_body[i].dir = snake_body[i-1].dir;
-        }
         snake_body[0].dir = tmp_dir;
         
     }

@@ -13,4 +13,5 @@ Work In Progress...
 - [x] Memory detection
 - [x] ATA PIO driver
 - [x] Paging
+- [ ] Memory management
 - [ ] Multithreading/Scheduler 
